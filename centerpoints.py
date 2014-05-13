@@ -13,19 +13,19 @@ def parse_arguments(argv):
 
     # TODO: Tests
 
-    parser = argparse.ArgumentParser(description="Calculate centerpoints in higher-dimensions.")
+    parser = argparse.ArgumentParser(description="Calculate approximate centerpoints in higher-dimensions.")
 
     algo_group = parser.add_argument_group("Algorithms")
     algo_group_algos = algo_group.add_mutually_exclusive_group(required=True)
-    algo_group_algos.add_argument("--radon", "--iterated-radon", "-1",  action="store_true",
-                                  help="Use the IteratedRadon algorithm.")
+    algo_group_algos.add_argument("--radon", "--iterated-radon", "-1", action="store_true",
+                                  help="Use the IteratedRadon algorithm introduced by Clarkson et al.")
     algo_group_algos.add_argument("--tverberg", "--iterated-tverberg", "-2", action="store_true",
-                                  help="Use the IteratedTverberg algorithm.")
-    algo_group_algos.add_argument("--mulzer", "-3", action="store_true",
-                                  help="Use the Mulzer algorithm.")
+                                  help="Use the IteratedTverberg algorithm introduced by Miller and Sheehy.")
+    algo_group_algos.add_argument("--linear", "--linear-tverberg", "-3", action="store_true",
+                                  help="Use the LinearTverberg algorithm introduced by Mulzer and Werner.")
 
     parser.add_argument("points", type=argparse.FileType('r'), metavar="POINTS",
-                        help='File containing the points (see also Input Formats). To read from stdin use "-"')
+                        help='File containing the points (see also Input Formats). To read from stdin use "-".')
 
     format_group = parser.add_argument_group("Input format")
     format_group.add_argument("--csv", nargs="?", type=str, const="\t", default="\t",

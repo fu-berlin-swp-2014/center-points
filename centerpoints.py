@@ -24,9 +24,7 @@ def parse_arguments(argv):
     algo_group_algos.add_argument("--mulzer", "-3", action="store_true",
                                   help="Use the Mulzer algorithm.")
 
-    parser.add_argument("points", nargs="?",
-                        #type=argparse.FileType('r'),
-                        default=sys.stdin, metavar="POINTS",
+    parser.add_argument("points", type=argparse.FileType('r'), metavar="POINTS",
                         help="Set of points. If no argument is given the set is read from stdin. See also Input Formats.")
 
     format_group = parser.add_argument_group("Input format")
@@ -45,7 +43,6 @@ def parse_arguments(argv):
 
     args.separator = args.csv
     del args.json, args.csv
-
 
     return args
 
@@ -95,7 +92,7 @@ def read_points_csv(file, delimiter):
         points.append(point)
 
     file.close()
-    return Points(points)
+    return points
 
 
 def read_points_json(file):

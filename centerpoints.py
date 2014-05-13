@@ -25,7 +25,7 @@ def parse_arguments(argv):
                                   help="Use the Mulzer algorithm.")
 
     parser.add_argument("points", type=argparse.FileType('r'), metavar="POINTS",
-                        help="Set of points. If no argument is given the set is read from stdin. See also Input Formats.")
+                        help='File containing the points (see also Input Formats). To read from stdin use "-"')
 
     format_group = parser.add_argument_group("Input format")
     format_group.add_argument("--csv", nargs="?", type=str, const="\t", default="\t",

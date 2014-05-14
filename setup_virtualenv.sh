@@ -1,7 +1,7 @@
 #! /usr/bin/env bash
 
 if [ ! -d ".env" ];then
-    virtualenv .env
+    pyvenv --copies .env
 fi
 
 source .env/bin/activate

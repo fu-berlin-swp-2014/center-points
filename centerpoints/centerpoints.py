@@ -1,6 +1,7 @@
 import argparse
 import sys
 import csv
+import json
 
 
 def parse_arguments(argv):
@@ -42,8 +43,7 @@ def parse_arguments(argv):
                               help="Read from a csv file separated by SEP"
                                    " (default: \\t) (default).")
     format_group.add_argument("--json", action="store_true",
-                              help="Read from a json file. "
-                                   "NOT IMPLEMENTED YET.")
+                              help="Read from a json file.")
 
     args = parser.parse_args(argv)
 
@@ -97,10 +97,11 @@ class Points:
 
 def read_points_csv(file, delimiter):
     reader = csv.reader(file, delimiter=delimiter)
-    points = []
 
+    points = []
     for row in reader:
         # Transform strings to floats, assuming they are . separated.
+        # TODO: throw custom error if reading failed
         point = map(float, row)
         points.append(point)
 
@@ -109,7 +110,12 @@ def read_points_csv(file, delimiter):
 
 
 def read_points_json(file):
-    raise NotImplementedError("JSON parser not defined yet.")
+    # Load the json file and convert ints to float.
+    # TODO: throw custom error if reading failed
+    points = json.load(file, parse_int=float)
+
+    file.close()
+    return points
 
 
 def main():

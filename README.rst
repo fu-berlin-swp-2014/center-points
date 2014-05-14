@@ -22,3 +22,7 @@ Emulate a travis test run. This will run the tests and build the documentation.
 If this pass, travis-ci should pass as well.
 ``$ ./travis.sh``
 
+Documentation
+==============
+
+The Documentation is available under: https://github.com/fu-berlin-swp-2014/center-points

@@ -25,4 +25,4 @@ If this pass, travis-ci should pass as well.
 Documentation
 ==============
 
-The Documentation is available under: https://github.com/fu-berlin-swp-2014/center-points
+The Documentation is available under: http://centerpoints.readthedocs.org/

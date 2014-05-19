@@ -1,2 +1,6 @@
 *.pyc
 .env/
+dist/
+build/
+centerpoints.egg-info/
+

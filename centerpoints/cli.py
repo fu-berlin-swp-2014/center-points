@@ -138,6 +138,3 @@ def main():
         pass
 
     raise NotImplementedError()
-
-if __name__ == "__main__":
-    main()

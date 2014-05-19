@@ -3,7 +3,7 @@ import sys
 import csv
 import json
 
-from centerpoints.helpers import has_valid_dimension
+from centerpoints.helpers import has_valid_dimension, has_valid_type
 
 
 def parse_arguments(argv):
@@ -97,7 +97,11 @@ def main():
 
     # Validate the dimension is correct.
     if not has_valid_dimension(points):
-        raise TypeError("Every Point has to have the same dimension.")
+        raise TypeError("Invalid dimension for some point.")
+
+    # Validate that every point consists of floats.
+    if not has_valid_type(points, float):
+        raise TypeError("Invalid format for some point.")
 
     result = None
     if options.radon:

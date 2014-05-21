@@ -45,6 +45,7 @@ def radon_point(points):
     _points = np.array(points)
     n = len(_points)
     d = len(_points[0])
+    assert n >= d + 2
 
     alphas = _find_alphas(_points)
 

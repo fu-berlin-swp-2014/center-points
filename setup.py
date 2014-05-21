@@ -15,7 +15,7 @@ setup(
     long_description=long_description,
     entry_points={
         'console_scripts': [
-            'centerpoints = centerpoints.centerpoints:main',
+            'centerpoints = centerpoints.cli:main',
         ]
     },
 )

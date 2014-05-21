@@ -3,6 +3,8 @@ import sys
 import csv
 import json
 
+from centerpoints.helpers import has_valid_dimension, has_valid_type
+
 
 def parse_arguments(argv):
     """
@@ -27,10 +29,10 @@ def parse_arguments(argv):
                                   action="store_true",
                                   help="Use the IteratedTverberg algorithm "
                                        "introduced by Miller and Sheehy.")
-    algo_group_algos.add_argument("--linear", "--linear-tverberg", "-3",
+    algo_group_algos.add_argument("--mulzer", "-3",
                                   action="store_true",
-                                  help="Use the LinearTverberg algorithm"
-                                       "introduced by Mulzer and Werner.")
+                                  help="Use the algorithm introduced by Mulzer"
+                                       " and Werner.")
 
     parser.add_argument("points", type=argparse.FileType('r'),
                         metavar="POINTS",
@@ -38,8 +40,8 @@ def parse_arguments(argv):
                              'Formats). To read from stdin use "-".')
 
     format_group = parser.add_argument_group("Input format")
-    format_group.add_argument("--csv", nargs="?", type=str, const="\t",
-                              default="\t", metavar="SEP",
+    format_group = format_group.add_mutually_exclusive_group(required=False)
+    format_group.add_argument("--csv", type=str, default="\t", metavar="SEP",
                               help="Read from a csv file separated by SEP"
                                    " (default: \\t) (default).")
     format_group.add_argument("--json", action="store_true",
@@ -59,42 +61,6 @@ def parse_arguments(argv):
     return args
 
 
-class Points:
-    def __init__(self, points, dimension=None):
-        if dimension is not None:
-            self._dimension = dimension
-        elif len(points) > 0:
-            self._dimension = len(points[0])
-        else:
-            self._dimension = 0
-
-        self._points = points
-
-        self._validate()
-
-    def _validate(self):
-        # TODO: tests
-        for point in self._points:
-            if len(point) != self._dimension:
-                # TODO: sinnvoller Fehler
-                raise RuntimeError("Point with invalid Dimension.")
-
-            for d in point:
-                # TODO: numpy zahlenformat?
-                if type(d) != float:
-                    raise RuntimeError("Points have to be of type float.")
-
-    @property
-    def dimension(self):
-        return self._dimension
-
-    def list(self):
-        return self._points
-
-    def __repr__(self):
-        return repr(self._points)
-
-
 def read_points_csv(file, delimiter):
     reader = csv.reader(file, delimiter=delimiter)
 
@@ -105,7 +71,6 @@ def read_points_csv(file, delimiter):
         point = map(float, row)
         points.append(point)
 
-    file.close()
     return points
 
 
@@ -114,22 +79,31 @@ def read_points_json(file):
     # TODO: throw custom error if reading failed
     points = json.load(file, parse_int=float)
 
-    file.close()
     return points
 
 
 def main():
-
     # Initialize and parse the arguments.
     options = parse_arguments(sys.argv[1:])
 
-    if options.format == "csv":
-        pointlist = read_points_csv(options.points, options.separator)
-    elif options.format == "json":
-        pointlist = read_points_json(options.points)
+    # Read the points from the file.
+    try:
+        if options.format == "csv":
+            points = read_points_csv(options.points, options.separator)
+        elif options.format == "json":
+            points = read_points_json(options.points)
+    finally:
+        options.points.close()
 
-    points = Points(pointlist)
+    # Validate the dimension is correct.
+    if not has_valid_dimension(points):
+        raise TypeError("Invalid dimension for some point.")
 
+    # Validate that every point consists of floats.
+    if not has_valid_type(points, float):
+        raise TypeError("Invalid format for some point.")
+
+    result = None
     if options.radon:
         pass
     elif options.tverberg:
@@ -137,7 +111,4 @@ def main():
     elif options.mulzer:
         pass
 
-    raise NotImplementedError()
-
-if __name__ == "__main__":
-    main()
+    print(result)

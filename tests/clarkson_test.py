@@ -32,7 +32,8 @@ class TestLibrary(unittest.TestCase):
 
         a = ClarksonAlgo()
         cpt = a.centerpoint(points)
-        print(cpt)
+        cpt2 = a.algo4(points)
+        print(cpt, cpt2)
 
         # for p in points:
         #

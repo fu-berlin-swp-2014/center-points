@@ -54,3 +54,18 @@ def radon_point(points):
     alphas_g = np.asmatrix(alphas[greater_idx]).T
     greater_points = np.asmatrix(_points[greater_idx]).T
     return np.asarray(greater_points * alphas_g / greater_sum)
+
+
+def sample_with_replacement(population, k, n=None):
+    """
+    Return a sample of size k with replacements chosen from the population.
+    If n is set, an array of size n containing samples of size k is returned.
+
+    :param population:
+    :param k: size of the sample
+    :param n: number of samples
+    :return: n (or 1) samples of size k
+    """
+    size = k if n is None else (n, k)
+    ids = np.random.randint(len(population), size=size)
+    return np.asarray(population)[ids]

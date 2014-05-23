@@ -1,10 +1,8 @@
 from math import log, ceil
 
-import numpy as np
-
 from .interfaces import CenterpointAlgo
 from .helpers import chunks
-from .lib import radon_point
+from .lib import radon_point, sample_with_replacement
 
 
 class ClarksonAlgo(CenterpointAlgo):
@@ -17,7 +15,7 @@ class ClarksonAlgo(CenterpointAlgo):
         # TODO: check L size and required number of points.
         L = (dim + 2) ** 4
 
-        nodes = _sample(points, L)
+        nodes = sample_with_replacement(points, L)
         while len(nodes) != 1:
             nodes = [radon_point(chunk) for chunk in chunks(nodes, dim + 2)]
 
@@ -33,13 +31,7 @@ class ClarksonAlgo(CenterpointAlgo):
 
         T = points
         for i in range(z):
-            T = [radon_point(sample) for sample in _sample(T, dim + 2, n)]
+            T = [radon_point(sample)
+                 for sample in sample_with_replacement(T, dim + 2, n)]
 
         return T[0]
-
-
-# TODO: Document and move to lib/helpers
-def _sample(population, trials, count=None):
-    size = trials if count is None else (count, trials)
-    ids = np.random.randint(len(population), size=size)
-    return np.asarray(population)[ids]

@@ -1,6 +1,7 @@
-import pep8
 import unittest
 from glob import glob
+
+import pep8
 
 
 class TestCodeFormat(unittest.TestCase):

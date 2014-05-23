@@ -5,7 +5,7 @@ import numpy as np
 
 def _find_alphas(points):
     n_dimensions = len(points[0])
-    n_points = len(points)                  # ≙ n
+    n_points = len(points)  # ≙ n
     n_equations = n_dimensions + 1
 
     equations = np.ones((n_equations, n_points))
@@ -19,7 +19,7 @@ def _find_alphas(points):
 
     for dimension in range(n_dimensions):
         for i in range(n_points):
-            equations[dimension+1, i] = points[i][dimension]
+            equations[dimension + 1, i] = points[i][dimension]
 
     # E * a = 0
     U, s, V = np.linalg.svd(equations)

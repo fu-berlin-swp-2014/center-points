@@ -1,8 +1,8 @@
 import unittest
-import copy
-import time
+
 import numpy as np
 import numpy.testing as nptest
+
 import centerpoints.lib as lib
 
 

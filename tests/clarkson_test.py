@@ -39,4 +39,3 @@ class TestLibrary(unittest.TestCase):
         #
         #     if not abs(p[0]**2 + p[1]**2 + p[2]**2 - 1) <= 1e-10:
         #         pass
-

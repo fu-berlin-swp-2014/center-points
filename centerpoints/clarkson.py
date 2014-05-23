@@ -15,7 +15,7 @@ class ClarksonAlgo(CenterpointAlgo):
     def centerpoint(self, points):
         dim = len(points[0])
         # TODO: check L size and required number of points.
-        L = (dim+2) ** 4
+        L = (dim + 2) ** 4
 
         nodes = _sample(points, L)
         while len(nodes) != 1:
@@ -27,7 +27,7 @@ class ClarksonAlgo(CenterpointAlgo):
         dim = len(points[0])
         n = len(points)
 
-        assert(n >= dim**4 + log(log(n)))
+        assert (n >= dim ** 4 + log(log(n)))
 
         z = ceil(dim + log(log(n)))
 
@@ -36,6 +36,7 @@ class ClarksonAlgo(CenterpointAlgo):
             T = [radon_point(sample) for sample in _sample(T, dim + 2, n)]
 
         return T[0]
+
 
 # TODO: Document and move to lib/helpers
 def _sample(population, trials, count=None):

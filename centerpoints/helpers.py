@@ -4,7 +4,7 @@ def has_valid_dimension(l, d=None):
         return False
 
     if d is None:
-        d = len(list[0])
+        d = len(l[0])
 
     for sub in l:
         if len(sub) != d:
@@ -24,7 +24,6 @@ def has_valid_type(l, t):
 
 
 def chunks(l, n):
-    """ Yield successive n-sized chunks from l.
-    """
+    """ Yield successive n-sized chunks from l."""
     for i in range(0, len(l), n):
         yield l[i:i + n]

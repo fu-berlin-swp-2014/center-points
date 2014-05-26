@@ -1,3 +1,5 @@
+.. image:: https://travis-ci.org/fu-berlin-swp-2014/center-points.svg?branch=master
+
 centerpoints
 ============
 

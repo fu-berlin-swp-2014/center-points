@@ -3,4 +3,4 @@
 dist/
 build/
 centerpoints.egg-info/
-
+.coverage

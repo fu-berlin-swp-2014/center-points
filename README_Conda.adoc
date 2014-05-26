@@ -1,0 +1,5 @@
+= Conda Installation
+
+To use the `conda` packet manager to generate the environment, plese install http://conda.pydata.org/miniconda.html[Miniconda] as supposed and run `setup-conda.sh`.
+
+Afterwards activate your environment by executing `source activate centerpoints`

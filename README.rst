@@ -1,3 +1,6 @@
+.. image:: https://coveralls.io/repos/fu-berlin-swp-2014/center-points/badge.png
+   :target: https://coveralls.io/r/fu-berlin-swp-2014/center-points
+
 centerpoints
 ============
 

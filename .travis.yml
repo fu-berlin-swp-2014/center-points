@@ -18,15 +18,7 @@ install:
   # Useful for debugging any issues with conda
   - conda info -a
   - echo "`sed 's/==/=/' < requirements.txt`"
-  - CONDA_DEPS=$(grep -E 'numpy|scipy' requirements.txt | sed 's/==/=/')
-  - PIP_DEPS=$(grep -vE 'numpy|scipy' requirements.txt )
-  # Usefull for debugging
-  - echo $CONDA_DEPS
-  - echo $PIP_DEPS
-  - conda create -n test-environment python=$TRAVIS_PYTHON_VERSION $CONDA_DEPS pip
-  - source activate test-environment
-  - pip install $PIP_DEPS
-  - python setup.py install
+  - ./setup_conda.sh
 script:
   - ./travis.sh
 notifications:

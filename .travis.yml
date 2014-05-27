@@ -19,6 +19,7 @@ install:
   - conda info -a
   - echo "`sed 's/==/=/' < requirements.txt`"
   - ./setup_conda.sh
+  - source activate centerpoints 
 script:
   - ./travis.sh
 notifications:

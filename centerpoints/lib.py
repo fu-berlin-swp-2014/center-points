@@ -16,9 +16,8 @@ def _find_alphas(points):
     # (d+1) x n - Matrix
     # where n = n_points and d = n_dimensions
 
-    equations = _points.T
     ones = np.ones(n_points)
-    equations = np.vstack((np.ones(n_points), equations))
+    equations = np.vstack((np.ones(n_points), _points.T))
 
     # E * a = 0
     U, s, V = np.linalg.svd(equations)
@@ -34,12 +33,17 @@ def _find_alphas(points):
     return alphas
 
 
-def radon_point(points):
+def radon_partition(points):
     """
-    Find the `radon point <http://en.wikipedia.org/wiki/Radon%27s_theorem>`.
+    Find a radon partition <http://en.wikipedia.org/wiki/Radon%27s_theorem>.
+
     points : (n, d)-array_like
         where n is the number of points and d the dimension of the points
-    Return the radon point as a ndarray.
+
+    Return the radon partitions I and J, the radon point and its alphas.
+        (I, J),
+        (radon point),
+        (alphas_I, alphas_J)
     """
     _points = np.asarray(points)
     n, d = _points.shape
@@ -47,18 +51,33 @@ def radon_point(points):
 
     alphas = _find_alphas(_points)
 
-    greater_idx = alphas >= 0
-    greater_alphas = np.asmatrix(alphas[greater_idx])
-    greater_sum = np.sum(greater_alphas)
-    greater_points = np.asmatrix(_points[greater_idx])
+    greater_idx = alphas > 0
+    greater_alphas = alphas[greater_idx]
+    greater_points = _points[greater_idx]
 
-    radon_pt = (greater_alphas / greater_sum) * greater_points
+    lower_idx = alphas <= 0  # ~greater_idx
+    lower_alphas = alphas[lower_idx]
+    lower_points = _points[lower_idx]
 
-    # Return the radon point as a ndarray and the correct dimension.
-    assert radon_pt.shape == (1, d)
-    radon_pt = np.asarray(radon_pt)
-    radon_pt.shape = d
+    sum_alphas = np.sum(greater_alphas)
+    radon_pt_greater_alphas = greater_alphas / sum_alphas
+    radon_pt_lower_alphas = (- lower_alphas) / sum_alphas
 
+    radon_pt = np.dot(radon_pt_greater_alphas, greater_points)
+
+    return ((greater_points, lower_points),
+            radon_pt,
+            (radon_pt_greater_alphas, radon_pt_lower_alphas))
+
+
+def radon_point(points):
+    """
+    Find the `radon point <http://en.wikipedia.org/wiki/Radon%27s_theorem>`.
+    points : (n, d)-array_like
+        where n is the number of points and d the dimension of the points
+    Return the radon point as a ndarray.
+    """
+    _, radon_pt, _ = radon_partition(points)
     return radon_pt
 
 

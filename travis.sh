@@ -2,5 +2,5 @@
 
 set -e
 
-nosetests
+nosetests --with-coverage --cover-package=centerpoints
 ./build-docs.sh

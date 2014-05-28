@@ -22,5 +22,7 @@ install:
   - source activate centerpoints 
 script:
   - ./travis.sh
+after_success:
+    coveralls
 notifications:
   email: false

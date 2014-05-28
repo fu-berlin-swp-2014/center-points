@@ -1,5 +1,8 @@
 .. image:: https://travis-ci.org/fu-berlin-swp-2014/center-points.svg?branch=master
 
+.. image:: https://coveralls.io/repos/fu-berlin-swp-2014/center-points/badge.png
+   :target: https://coveralls.io/r/fu-berlin-swp-2014/center-points
+
 centerpoints
 ============
 

@@ -3,7 +3,8 @@ import sys
 import csv
 import json
 
-from centerpoints.helpers import has_valid_dimension, has_valid_type
+from .clarkson import ClarksonAlgo
+from .helpers import has_valid_dimension, has_valid_type
 
 
 def parse_arguments(argv):
@@ -68,7 +69,7 @@ def read_points_csv(file, delimiter):
     for row in reader:
         # Transform strings to floats, assuming they are . separated.
         # TODO: throw custom error if reading failed
-        point = map(float, row)
+        point = list(map(float, row))
         points.append(point)
 
     return points
@@ -105,7 +106,9 @@ def main():
 
     result = None
     if options.radon:
-        pass
+        clarkson = ClarksonAlgo()
+        result = clarkson.centerpoint(points)
+
     elif options.tverberg:
         pass
     elif options.mulzer:

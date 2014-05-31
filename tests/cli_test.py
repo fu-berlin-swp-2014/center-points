@@ -31,8 +31,8 @@ class TestArgumentParser(unittest.TestCase):
 
         options = parse_arguments(["-1", "--csv", ",", self.ptsf.name])
         self.assertEqual("csv", options.format)
-        self.assertEqual(options.separator, ",",)
+        self.assertEqual(options.separator, ",", )
 
         options = parse_arguments(["-1", self.ptsf.name])
-        self.assertEqual(options.format, "csv",)
+        self.assertEqual(options.format, "csv", )
         self.assertEqual(options.separator, "\t")

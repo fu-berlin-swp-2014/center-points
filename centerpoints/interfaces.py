@@ -1,9 +1,7 @@
-
-
 class CenterpointAlgo:
     """super class of all centerpoint algorithms. Not stable yet."""
 
-    def centerpoint(points):
+    def centerpoint(self, points):
         """
         Return the centerpoint of `points` or an approximation of it
 

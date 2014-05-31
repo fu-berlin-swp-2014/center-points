@@ -1,8 +1,8 @@
 import unittest
-import copy
-import time
+
 import numpy as np
 import numpy.testing as nptest
+
 import centerpoints.lib as lib
 
 
@@ -43,15 +43,15 @@ class TestLibrary(unittest.TestCase):
             self.assertEqual(type(radon_tuple), np.ndarray)
 
             radon = np.asmatrix(radon_tuple)
-            greater_alphas = np.asmatrix(alphas[alphas >= 0]).T
-            greater_points = np.asmatrix(points[alphas >= 0]).T
+            greater_alphas = np.asmatrix(alphas[alphas >= 0])
+            greater_points = np.asmatrix(points[alphas >= 0])
 
             nptest.assert_allclose(radon / np.sum(greater_alphas),
-                                   greater_points * greater_alphas)
+                                   greater_alphas * greater_points)
 
-            smaller_alphas = np.asmatrix(alphas[alphas < 0]).T
-            smaller_points = np.asmatrix(points[alphas < 0]).T
+            smaller_alphas = np.asmatrix(alphas[alphas < 0])
+            smaller_points = np.asmatrix(points[alphas < 0])
 
-            nptest.assert_allclose(smaller_points * smaller_alphas,
+            nptest.assert_allclose(smaller_alphas * smaller_points,
                                    radon / np.sum(smaller_alphas),
                                    atol=1e-15)

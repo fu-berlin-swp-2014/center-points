@@ -1,0 +1,4 @@
+[report]
+omit =
+    centerpoints/interfaces.py
+    centerpoints/__main__.py

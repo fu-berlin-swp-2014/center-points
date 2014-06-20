@@ -1,9 +1,10 @@
 import unittest
 import math
 
+
 import numpy as np
 
-from centerpoints.clarkson import ClarksonAlgo
+from centerpoints.iterated_tverberg import IteratedTverberg
 from .test_helper import random_sphere_points
 
 
@@ -14,34 +15,32 @@ class TestLibrary(unittest.TestCase):
             pass
 
 
-    def test_clarkson(self):
+
+    def test_tverberg(self):
         points = random_sphere_points(100, 3)
 
-        a = ClarksonAlgo()
+        a = IteratedTverberg()
         cpt = a.centerpoint(points)
-        cpt2 = a.algo4(points)
-        print(cpt, cpt2)
+        print(cpt)
 
         # for p in points:
         #
         #     if not abs(p[0]**2 + p[1]**2 + p[2]**2 - 1) <= 1e-10:
         #         pass
 
-    def test_clarkson_1d(self):
+    def test_tverberg_1d(self):
         points = np.arange(100)
         points.shape = (100, 1)
 
-        c = ClarksonAlgo()
+        c = IteratedTverberg()
         cpt = c.centerpoint(points)
-        cpt2 = c.algo4(points)
-        print(cpt, cpt2)
+        print(cpt)
 
-    def test_clarkson_2d(self):
+    def test_tverberg_2d(self):
         points = []
         for i in range(-100, 100):
             points.append([i, 2 * i])
 
-        c = ClarksonAlgo()
+        c = IteratedTverberg()
         cpt = c.centerpoint(points)
-        cpt2 = c.algo4(points)
-        print(cpt, cpt2)
+        print(cpt)

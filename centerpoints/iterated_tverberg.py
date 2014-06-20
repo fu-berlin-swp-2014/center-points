@@ -14,7 +14,7 @@ class IteratedTverberg(CenterpointAlgo):
         n, d = points.shape
 
         # The loop terminates when a point is in the Bucket B_z
-        z = int(log(ceil(n / (2 * ((d + 1) ** 2)))))
+        z = int(ceil(log(ceil(n / (2 * ((d + 1) ** 2))))))
 
         # Initialize empty stacks
         B = [[] for l in range(z+1)]
@@ -38,6 +38,7 @@ class IteratedTverberg(CenterpointAlgo):
             radon_qpoints = [l[0] for l in qpoints]
 
             radon_pt, alphas, indicies = radon_partition(radon_qpoints)
+            pass
 
             for k in range(2):
                 idx = indicies[k]
@@ -68,9 +69,12 @@ class IteratedTverberg(CenterpointAlgo):
                     for m in non_hull:
                         B[0].append((m,[[(1, m)]]))
 
+                    pass
+
 
 
             B[l].append((radon_pt, proof))
+            pass
         return B[z][0][0]
 
 

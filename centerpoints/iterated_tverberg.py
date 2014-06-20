@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import numpy as np
-from numpy.math import log, ceil
+from numpy import log, ceil
 
 from .interfaces import CenterpointAlgo
 from .lib import radon_partition
@@ -10,14 +10,14 @@ from .lib import radon_partition
 class IteratedTverberg(CenterpointAlgo):
 
     def centerpoint(self, points):
-        points = np.asrray(points)
+        points = np.asarray(points)
         n, d = points.shape
 
         # The loop terminates when a point is in the Bucket B_z
-        z = log(ceil(n / (2 * ((d + 1) ** 2))))
+        z = int(log(ceil(n / (2 * ((d + 1) ** 2)))))
 
         # Initialize empty stacks
-        B = [[] for l in range(z)]
+        B = [[] for l in range(z+1)]
 
         # Push initial points with trival proofs
         for s in points:
@@ -33,9 +33,11 @@ class IteratedTverberg(CenterpointAlgo):
             l = find_l(B, d)
 
             # Pop d + 2 points q_1 , . . . , q_d+2 from B_l−1
-            qpoints = pop(B[l-1], d + 2)
+            qpoints = np.asarray(list(pop(B[l-1], d + 2)), dtype=object)
 
-            radon_pt, alphas, indicies = radon_partition(qpoints)
+            radon_qpoints = [l[0] for l in qpoints]
+
+            radon_pt, alphas, indicies = radon_partition(radon_qpoints)
 
             for k in range(2):
                 idx = indicies[k]
@@ -56,27 +58,27 @@ class IteratedTverberg(CenterpointAlgo):
                     for j, q in enumerate(qpoints_with_proofs):
                         # q[1][i] = [ (a, s), (a, s) ...  ]
                         for m in q[1][i]:
-                            X.append(alphas[k][j] * m[0], m[1])
+                            X.append((alphas[k][j] * m[0], m[1]))
 
                     # radonpunkt ist nun in abhängigkeit der proofs dargestellt
                     X2, non_hull = _prune2(X)
                     # X2 = [ (a, s), (a,s) ...  ]
                     proof.append(X2)
 
-                    for m in non_hull
+                    for m in non_hull:
                         B[0].append((m,[[(1, m)]]))
 
 
 
             B[l].append((radon_pt, proof))
-        return B[z][0]
+        return B[z][0][0]
 
 
 
 # Let l be the max such that B_l−1 has at least d + 2 points
 def find_l(B, d):
     l = 0
-    for i, b in B:
+    for i, b in enumerate(B):
         if len(b) >= d + 2:
             l = i
 
@@ -98,7 +100,7 @@ def _prune2(X):
     hull = np.asarray(hull)
     alphas, hull, non_hull = _prune(alphas, hull)
     assert (len(alphas) == len(hull))
-    return [alphas[i], hull[i] for i in range(len(hull))], non_hull
+    return [(alphas[i], hull[i]) for i in range(len(hull))], non_hull
 
 
 def _prune(alphas, hull, non_hull=[]):
@@ -106,7 +108,7 @@ def _prune(alphas, hull, non_hull=[]):
     idx_nonzero = ~ np.isclose(alphas, np.zeros_like(alphas))  # alphas != 0
     #print(idx_nonzero, alphas, hull)
     alphas = alphas[idx_nonzero]
-    non_hull = hull[~idx_nonzero] + non_hull
+    non_hull = list(hull[~idx_nonzero]) + non_hull
     hull = hull[idx_nonzero]
 
     # @see http://www.math.cornell.edu/~eranevo/homepage/ConvNote.pdf

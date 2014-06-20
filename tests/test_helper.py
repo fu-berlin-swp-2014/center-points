@@ -1,3 +1,7 @@
+import math
+import numpy as np
+
+
 def random_sphere_points(n_points, dim):
     assert dim == 3
 

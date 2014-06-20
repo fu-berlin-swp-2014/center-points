@@ -5,7 +5,7 @@ import math
 import numpy as np
 
 from centerpoints.iterated_tverberg import IteratedTverberg
-from .test_helper import random_sphere_points
+from test_helper import random_sphere_points
 
 
 class TestLibrary(unittest.TestCase):

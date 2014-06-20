@@ -47,7 +47,9 @@ class TestLibrary(unittest.TestCase):
             greater_alphas = np.asmatrix(alphas[greater_idx])
             greater_points = np.asmatrix(points[greater_idx])
 
-            nptest.assert_allclose(radon / np.sum(greater_alphas),
+            sum_greater = np.sum(greater_alphas)
+            nptest.assert_allclose(radon / sum_greater, radon * sum_greater)
+            nptest.assert_allclose(radon / sum_greater,
                                    greater_alphas * greater_points)
 
             smaller_alphas = np.asmatrix(alphas[~ greater_idx])
@@ -56,3 +58,38 @@ class TestLibrary(unittest.TestCase):
             nptest.assert_allclose(smaller_alphas * smaller_points,
                                    radon / np.sum(smaller_alphas),
                                    atol=1e-15)
+
+    def test_solve_homogeneous(self):
+        M = np.array([[1, 0, 0, 0, 2],
+                      [0, 0, 3, 0, 0],
+                      [0, 0, 0, 0, 0],
+                      [0, 4, 0, 0, 0]])
+
+        null = lib.solve_homogeneous(M)
+        nptest.assert_allclose(np.dot(M, null), np.zeros(4), atol=1e-10)
+
+    def test_null_space(self):
+        # simple example with a one dimensional null space ()
+        a = np.array([[2, 3, 5], [-4, 2, 3], [0, 0, 0]])
+        null_space_a = lib.null_space(a)
+        x = np.dot(a, null_space_a)
+        nptest.assert_allclose(np.dot(a, (2*null_space_a)),
+                               np.zeros_like(null_space_a),
+                               atol=1e-10)
+        nptest.assert_allclose(np.dot(a, (10*null_space_a)),
+                               np.zeros_like(null_space_a),
+                               atol=1e-10)
+
+        # advanced example with a 3 dimensional null space ()
+        b = np.array([[1, 1, 1, 2, 3],
+                      [1, 0, 1, 2, 3],
+                      [1, 0, 1, 2, 3],
+                      [1, 0, 1, 2, 3],
+                      [1, 0, 1, 2, 3]])
+
+        null_space_b = lib.null_space(b)
+
+        null_vec = 2*null_space_b[:, 0] + 4*null_space_b[:, 1]
+        nptest.assert_allclose(np.dot(b, null_vec),
+                               np.zeros_like(null_vec),
+                               atol=1e-10)

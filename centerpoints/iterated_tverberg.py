@@ -14,7 +14,7 @@ class IteratedTverberg(CenterpointAlgo):
 def _prune(alphas, hull):
     # Remove all coefficients that are already (close to) zero.
     idx_nonzero = ~ np.isclose(alphas, np.zeros_like(alphas))  # alphas != 0
-    #print(idx_nonzero, alphas, hull)
+    # print(idx_nonzero, alphas, hull)
     alphas = alphas[idx_nonzero]
     hull = hull[idx_nonzero]
 
@@ -54,14 +54,15 @@ def _prune(alphas, hull):
     # be updated automatically.
     _alphas[:] = _alphas - (lambdas[lambda_min_idx] * betas)
 
-    #print("alphas':", alphas, "\nhull:", hull, "\nbetas:", betas, "\nid:", lambda_min_idx)
+    # print("alphas':", alphas, "\nhull:", hull, "\nbetas:", betas,
+    #       "\nid:", lambda_min_idx)
 
     # Remove (filter) the pruned hull vector.
     idx = np.arange(n) != lambda_min_idx
     hull = hull[idx]
     alphas = alphas[idx]
 
-    #print("pt:", alphas.dot(hull), alphas.dtype)
+    # print("pt:", alphas.dot(hull), alphas.dtype)
 
     return _prune(alphas, hull)
 

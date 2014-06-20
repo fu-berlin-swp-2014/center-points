@@ -16,39 +16,7 @@ def _find_alphas(points):
 
     equations = np.vstack((np.ones(n_points), _points.T))
 
-    return solve_homogeneous2(equations)
-
-
-# I don't know how exactly this works.
-# My source is http://campar.in.tum.de/twiki/pub/Chair/
-# TeachingWs05ComputerVision/3DCV_svd_000.pdf
-# E ≙ equations, a ≙ alphas
-# || E * a || = ||U * s * V.T * a|| =   // U is an unitary matrix
-#               ||s * V.T * a|| =
-#
-# Implemenation see also:
-# http://stackoverflow.com/questions/1835246
-# /how-to-solve-homogeneous-linear-equations-with-numpy
-def solve_homogeneous(A, eps=1e-15):
-    assert(isinstance(A, np.ndarray))
-
-    n, d = A.shape
-
-    U, s, V = np.linalg.svd(A, full_matrices=False)
-    nullspace = np.compress(s < eps, V, axis=0)
-
-    return nullspace
-
-
-def solve_homogeneous2(A):
-    assert(isinstance(A, np.ndarray))
-
-    n, d = A.shape
-
-    U, s, V = np.linalg.svd(A, full_matrices=True)
-    nullspace = V[-1]
-
-    return nullspace
+    return solve_homogeneous(equations)
 
 
 def radon_partition(points):
@@ -112,3 +80,24 @@ def sample_with_replacement(population, k, n=None):
     size = k if n is None else (n, k)
     ids = np.random.randint(len(population), size=size)
     return np.asarray(population)[ids]
+
+
+def solve_homogeneous(M):
+    """
+    Return a vector x, that satisfies `M*x = 0`
+    """
+    assert(isinstance(M, np.ndarray))
+    # From: http://campar.in.tum.de/twiki/pub/Chair/
+    # TeachingWs05ComputerVision/3DCV_svd_000.pdf
+    u, s, vh = np.linalg.svd(M)
+    return vh.T[:, -1]
+
+
+def null_space(matrix, eps=1e-15):
+    # Implemenation see also:
+    # http://stackoverflow.com/questions/1835246/
+    # how-to-solve-homogeneous-linear-equations-with-numpy
+    u, s, vh = np.linalg.svd(matrix)
+    null_mask = (s <= eps)
+    nullspace = np.compress(null_mask, vh, axis=0)
+    return nullspace.T

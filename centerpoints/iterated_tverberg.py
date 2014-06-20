@@ -12,6 +12,12 @@ class IteratedTverberg(CenterpointAlgo):
 
 
 def _prune(alphas, hull):
+    # Remove all coefficients that are already (close to) zero.
+    idx_nonzero = ~ np.isclose(alphas, np.zeros_like(alphas)) # alphas != 0
+    #print(idx_nonzero, alphas, hull)
+    alphas = alphas[idx_nonzero]
+    hull = hull[idx_nonzero]
+
     # @see http://www.math.cornell.edu/~eranevo/homepage/ConvNote.pdf
     # http://en.wikipedia.org/wiki/Carath%C3%A9odory's_theorem_(convex_hull)
     n, d = hull.shape
@@ -25,27 +31,37 @@ def _prune(alphas, hull):
     _alphas = alphas[:d + 2]
 
     # Create linearly dependent vectors
-    ld = _hull[1:] - _hull[1]
+    lindep = _hull[1:] - _hull[1]
 
-    # Solve β * ld = 0
-    _, _, V = np.linalg.svd(ld.T)
+    # Solve β * lindep = 0
+    _, _, V = np.linalg.svd(lindep.T)
     _betas = V.T[:, -1]
 
     # Calculate β_1 in a way to assure Sum β_i = 0
-    _beta1 = - np.sum(_betas)
-    betas = np.hstack((_beta1, _betas))
+    beta1 = np.negative(np.sum(_betas))
+    betas = np.hstack((beta1, _betas))
 
     # Calculate the adjusted alphas and determine the minimum.
-    lambdas = _alphas / betas
+    # Calculate the minimum fraction α / β_i for each β_i > 0
+    idx_positive = betas > 0
+    idx_nonzero = ~ np.isclose(betas, np.zeros_like(betas))  # betas != 0
+    idx = idx_positive & idx_nonzero
+    lambdas = _alphas[idx] / betas[idx]
     lambda_min_idx = np.argmin(lambdas)
 
     # Adjust the α's of the original point
-    alphas = alphas[:]
-    alphas[:d + 2] = _alphas - (lambdas[lambda_min_idx] * betas)
+    # Since _alphas is a view to the original data, the alphas array will be
+    # be updated automatically.
+    _alphas[:] = _alphas - (lambdas[lambda_min_idx] * betas)
 
+    #print("alphas':", alphas, "\nhull:", hull, "\nbetas:", betas, "\nid:", lambda_min_idx)
+
+    # Remove (filter) the pruned hull vector.
     idx = np.arange(n) != lambda_min_idx
     hull = hull[idx]
     alphas = alphas[idx]
+
+    #print("pt:", alphas.dot(hull), alphas.dtype)
 
     return _prune(alphas, hull)
 
@@ -58,4 +74,3 @@ def _prune(alphas, hull):
 #     x, residues, rank, s = np.linalg.lstsq(a,b)
 #
 #     return x
-

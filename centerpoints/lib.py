@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-
 import numpy as np
 
 
@@ -7,7 +6,6 @@ def _find_alphas(points):
     _points = np.asarray(points)
 
     n_points, n_dimensions = _points.shape
-    n_equations = n_dimensions + 1
 
     # equations = | 1       ...     1   |
     #             | p[1,1]  ...  p[n,1] |
@@ -16,11 +14,10 @@ def _find_alphas(points):
     # (d+1) x n - Matrix
     # where n = n_points and d = n_dimensions
 
-    ones = np.ones(n_points)
     equations = np.vstack((np.ones(n_points), _points.T))
 
     # E * a = 0
-    U, s, V = np.linalg.svd(equations)
+    U, s, V = np.linalg.svd(equations, full_matrices=False)
 
     # I don't know how exactly this works.
     # My source is http://campar.in.tum.de/twiki/pub/Chair/
@@ -31,6 +28,17 @@ def _find_alphas(points):
     #
     alphas = V.T[:, -1]
     return alphas
+
+
+def solve_homogeneous(A, eps=1e-15):
+    assert(isinstance(A, np.ndarray))
+
+    n, d = A.shape
+
+    U, s, V = np.linalg.svd(A, full_matrices=False)
+    nullspace = np.compress(s < eps, V, axis=0)
+
+    return nullspace
 
 
 def radon_partition(points):

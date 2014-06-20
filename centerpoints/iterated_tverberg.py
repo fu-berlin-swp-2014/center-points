@@ -35,19 +35,16 @@ class IteratedTverberg(CenterpointAlgo):
             # Pop d + 2 points q_1 , . . . , q_d+2 from B_l−1
             qpoints = pop(B[l-1], d + 2)
 
-            # TODO: radon should return gt_idx and lw_idx
-            hull, radon_pt, alphas = radon_partition(qpoints)
+            radon_pt, alphas, indicies = radon_partition(qpoints)
 
             for k in range(2):
-                # TODO: radon should return gt_idx and lw_idx
-                idx = []
+                idx = indicies[k]
                 qpoints_with_proofs = qpoints[idx]
 
                 for i in range(2 ** (l - 1)):
                     # Let S_ij be the ith part of the proof for q_j
                     # ?????
 
-                    # TODO: Access the points[gt_idx], points[lw_idx]  which contain proofs
                     # TODO: union proofs => proofs should be sets
 
                     # Union of all part i of the proofs.
@@ -62,15 +59,17 @@ class IteratedTverberg(CenterpointAlgo):
                             X.append(alphas[k][j] * m[0], m[1])
 
                     # radonpunkt ist nun in abhängigkeit der proofs dargestellt
-                    # TODO: return removed hull point indices from pruning
-                    X2 = _prune2(X)
+                    X2, non_hull = _prune2(X)
                     # X2 = [ (a, s), (a,s) ...  ]
                     proof.append(X2)
 
-                    # TODO: add the removed hull points do B_0
+                    for m in non_hull
+                        B[0].append((m,[[(1, m)]]))
+
+
 
             B[l].append((radon_pt, proof))
-
+        return B[z][0]
 
 
 
@@ -90,14 +89,24 @@ def pop(l, n):
 
 
 def _prune2(X):
-    pass
+    alphas = []
+    hull = []
+    for i in X:
+        alphas.append(i[0])
+        hull.append(i[1])
+    alphas = np.asarray(alphas)
+    hull = np.asarray(hull)
+    alphas, hull, non_hull = _prune(alphas, hull)
+    assert (len(alphas) == len(hull))
+    return [alphas[i], hull[i] for i in range(len(hull))], non_hull
 
 
-def _prune(alphas, hull):
+def _prune(alphas, hull, non_hull=[]):
     # Remove all coefficients that are already (close to) zero.
     idx_nonzero = ~ np.isclose(alphas, np.zeros_like(alphas))  # alphas != 0
     #print(idx_nonzero, alphas, hull)
     alphas = alphas[idx_nonzero]
+    non_hull = hull[~idx_nonzero] + non_hull
     hull = hull[idx_nonzero]
 
     # @see http://www.math.cornell.edu/~eranevo/homepage/ConvNote.pdf
@@ -106,7 +115,7 @@ def _prune(alphas, hull):
 
     # Anchor: d + 1 hull points can't be reduced any further
     if n <= d + 1:
-        return alphas, hull
+        return alphas, hull, non_hull
 
     # Choose d + 2 hull points
     _hull = hull[:d + 2]
@@ -141,11 +150,12 @@ def _prune(alphas, hull):
     # Remove (filter) the pruned hull vector.
     idx = np.arange(n) != lambda_min_idx
     hull = hull[idx]
+    non_hull.append(hull[lambda_min_idx])
     alphas = alphas[idx]
 
     #print("pt:", alphas.dot(hull), alphas.dtype)
 
-    return _prune(alphas, hull)
+    return _prune(alphas, hull, non_hull)
 
 
 # def _convex_combination(point, hull):

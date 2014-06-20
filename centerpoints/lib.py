@@ -83,9 +83,9 @@ def radon_partition(points):
 
     radon_pt = np.dot(radon_pt_greater_alphas, greater_points)
 
-    return ((greater_points, lower_points),
-            radon_pt,
-            (radon_pt_greater_alphas, radon_pt_lower_alphas))
+    return (radon_pt,
+            (radon_pt_greater_alphas, radon_pt_lower_alphas),
+            (greater_idx, lower_idx))
 
 
 def radon_point(points):
@@ -95,7 +95,7 @@ def radon_point(points):
         where n is the number of points and d the dimension of the points
     Return the radon point as a ndarray.
     """
-    _, radon_pt, _ = radon_partition(points)
+    radon_pt, _, _ = radon_partition(points)
     return radon_pt
 
 

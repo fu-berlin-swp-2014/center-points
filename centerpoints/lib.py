@@ -16,20 +16,19 @@ def _find_alphas(points):
 
     equations = np.vstack((np.ones(n_points), _points.T))
 
-    # E * a = 0
-    U, s, V = np.linalg.svd(equations, full_matrices=False)
-
-    # I don't know how exactly this works.
-    # My source is http://campar.in.tum.de/twiki/pub/Chair/
-    #     TeachingWs05ComputerVision/3DCV_svd_000.pdf
-    # E ≙ equations, a ≙ alphas
-    # || E * a || = ||U * s * V.T * a|| =   // U is an unitary matrix
-    #               ||s * V.T * a|| =
-    #
-    alphas = V.T[:, -1]
-    return alphas
+    return solve_homogeneous2(equations)
 
 
+# I don't know how exactly this works.
+# My source is http://campar.in.tum.de/twiki/pub/Chair/
+# TeachingWs05ComputerVision/3DCV_svd_000.pdf
+# E ≙ equations, a ≙ alphas
+# || E * a || = ||U * s * V.T * a|| =   // U is an unitary matrix
+#               ||s * V.T * a|| =
+#
+# Implemenation see also:
+# http://stackoverflow.com/questions/1835246
+# /how-to-solve-homogeneous-linear-equations-with-numpy
 def solve_homogeneous(A, eps=1e-15):
     assert(isinstance(A, np.ndarray))
 
@@ -37,6 +36,17 @@ def solve_homogeneous(A, eps=1e-15):
 
     U, s, V = np.linalg.svd(A, full_matrices=False)
     nullspace = np.compress(s < eps, V, axis=0)
+
+    return nullspace
+
+
+def solve_homogeneous2(A):
+    assert(isinstance(A, np.ndarray))
+
+    n, d = A.shape
+
+    U, s, V = np.linalg.svd(A, full_matrices=True)
+    nullspace = V[-1]
 
     return nullspace
 
@@ -63,13 +73,13 @@ def radon_partition(points):
     greater_alphas = alphas[greater_idx]
     greater_points = _points[greater_idx]
 
-    lower_idx = alphas <= 0  # ~greater_idx
+    lower_idx = ~ greater_idx
     lower_alphas = alphas[lower_idx]
     lower_points = _points[lower_idx]
 
     sum_alphas = np.sum(greater_alphas)
     radon_pt_greater_alphas = greater_alphas / sum_alphas
-    radon_pt_lower_alphas = (- lower_alphas) / sum_alphas
+    radon_pt_lower_alphas = lower_alphas / (- sum_alphas)
 
     radon_pt = np.dot(radon_pt_greater_alphas, greater_points)
 

@@ -26,8 +26,8 @@ class TestLibrary(unittest.TestCase):
             self.assertEqual(type(alphas), type(np.array([])))
             self.assertEqual(len(alphas), len(points))
 
-            smaller_idx = alphas < 0
-            greater_idx = alphas >= 0
+            greater_idx = alphas > 0
+            smaller_idx = ~ greater_idx
             smaller_sum = np.sum(alphas[smaller_idx])
             greater_sum = np.sum(alphas[greater_idx])
 
@@ -43,14 +43,15 @@ class TestLibrary(unittest.TestCase):
             self.assertEqual(type(radon_tuple), np.ndarray)
 
             radon = np.asmatrix(radon_tuple)
-            greater_alphas = np.asmatrix(alphas[alphas >= 0])
-            greater_points = np.asmatrix(points[alphas >= 0])
+            greater_idx = alphas > 0
+            greater_alphas = np.asmatrix(alphas[greater_idx])
+            greater_points = np.asmatrix(points[greater_idx])
 
             nptest.assert_allclose(radon / np.sum(greater_alphas),
                                    greater_alphas * greater_points)
 
-            smaller_alphas = np.asmatrix(alphas[alphas < 0])
-            smaller_points = np.asmatrix(points[alphas < 0])
+            smaller_alphas = np.asmatrix(alphas[~ greater_idx])
+            smaller_points = np.asmatrix(points[~ greater_idx])
 
             nptest.assert_allclose(smaller_alphas * smaller_points,
                                    radon / np.sum(smaller_alphas),

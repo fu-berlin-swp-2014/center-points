@@ -13,7 +13,7 @@ class IteratedTverberg(CenterpointAlgo):
 
 def _prune(alphas, hull):
     # Remove all coefficients that are already (close to) zero.
-    idx_nonzero = ~ np.isclose(alphas, np.zeros_like(alphas)) # alphas != 0
+    idx_nonzero = ~ np.isclose(alphas, np.zeros_like(alphas))  # alphas != 0
     #print(idx_nonzero, alphas, hull)
     alphas = alphas[idx_nonzero]
     hull = hull[idx_nonzero]

@@ -24,8 +24,10 @@ def sphere_points(n, r=1):
 
     nn = math.log2(n)
 
-    pi2_steps = np.arange(0, 2*pi, step=(2*pi / nn))
-    pi_steps = np.arange(0, pi, step=(pi / nn))
+    np.mgrid(0:2 * pi: complex(nn), 0:pi:complex(nn))
+
+    pi2_steps = np.linspace(0, 2*pi, nn)
+    pi_steps = np.linspace(0, pi, nn)
 
     points = []
     for i in pi2_steps:

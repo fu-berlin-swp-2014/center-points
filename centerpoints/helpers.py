@@ -1,3 +1,7 @@
+import json
+import numpy
+
+
 def has_valid_dimension(l, d=None):
     """Check congruent dimensions in a two-dimensional list."""
     if not l:
@@ -27,3 +31,10 @@ def chunks(l, n):
     """ Yield successive n-sized chunks from l."""
     for i in range(0, len(l), n):
         yield l[i:i + n]
+
+
+class NumpyAwareJSONEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, numpy.ndarray) and obj.ndim == 1:
+            return obj.tolist()
+        return json.JSONEncoder.default(self, obj)

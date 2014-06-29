@@ -4,7 +4,9 @@ import csv
 import json
 
 from .clarkson import ClarksonAlgo
-from .helpers import has_valid_dimension, has_valid_type
+from .iterated_tverberg import IteratedTverberg
+from .helpers import has_valid_dimension, has_valid_type, NumpyAwareJSONEncoder
+from .benchmark import  benchmark
 
 
 def parse_arguments(argv):
@@ -19,6 +21,12 @@ def parse_arguments(argv):
 
     parser = argparse.ArgumentParser(
         description="Calculate approximate centerpoints in higher-dimensions.")
+
+    parser.add_argument("--benchmark", default=0, type=int,
+                        metavar="NUM",
+                        help="Run the specified centerpoint algorithm NUM "
+                             "times and return a JSON tuple "
+                             "(timings, results).")
 
     algo_group = parser.add_argument_group("Algorithms")
     algo_group_algos = algo_group.add_mutually_exclusive_group(required=True)
@@ -104,14 +112,35 @@ def main():
     if not has_valid_type(points, float):
         raise TypeError("Invalid format for some point.")
 
-    result = None
+    algorithm = None
     if options.radon:
-        clarkson = ClarksonAlgo()
-        result = clarkson.centerpoint(points)
+        algorithm = ClarksonAlgo()
 
     elif options.tverberg:
-        pass
-    elif options.mulzer:
-        pass
+        algorithm = IteratedTverberg()
 
-    print(result)
+    elif options.mulzer:
+        raise NotImplementedError()
+
+    if options.benchmark > 0:
+        result = benchmark(algorithm, points, options.benchmark)
+
+        json.dump(result, sys.stdout,
+                  cls=NumpyAwareJSONEncoder,
+                  # indent=4, separators=(',', ': ')
+                  )
+        print()  # \n
+
+    else:
+        result = algorithm.centerpoint(points)
+
+        # TODO: discuss if this is our intent?
+        if options.format == "csv":
+            writer = csv.writer(sys.stdout, delimiter=options.separator)
+            writer.writerow(result)
+
+        elif options.format == "json":
+            json.dump(result, sys.stdout,
+                      # indent=4, separators=(',', ': ')
+                      )
+            print()  # \n

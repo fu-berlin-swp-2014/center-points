@@ -4,7 +4,7 @@ import math
 import numpy as np
 
 from centerpoints.clarkson import ClarksonAlgo
-from test_helper import random_sphere_points
+from centerpoints.helpers import random_sphere_points
 
 
 class TestLibrary(unittest.TestCase):

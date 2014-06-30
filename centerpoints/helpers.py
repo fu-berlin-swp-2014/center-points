@@ -46,7 +46,7 @@ def random_sphere_points(n_points, dim):
 
     # @see http://en.wikipedia.org/wiki/Spherical_coordinate_system
     r = 1
-    theta = np.random.rand(n_points) * 2 * pi
+    theta = np.random.rand(n_points) * pi
     phi = np.random.rand(n_points) * 2 * pi
 
     x = r * np.sin(theta) * np.cos(phi)
@@ -89,14 +89,13 @@ def sphere_points(n, dim, r=1):
     _points = points.T
 
     _points[0] = r * np.cos(ang[0])
-    sin_cum = r * np.sin(ang[0])
+    sin_cum = r
     for i in range(1, dim - 1):
+        sin_cum *= np.sin(ang[i-1])
         _points[i] = sin_cum * np.cos(ang[i])
-        sin_cum *= np.sin(ang[i])
 
-    if dim > 2:
-        _points[-1] = sin_cum * np.sin(ang[-1])
-    else:
-        _points[-1] = sin_cum
+    _points[-1] = sin_cum * np.sin(ang[-1])
+
+    np.random.shuffle(points)
 
     return points

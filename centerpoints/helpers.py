@@ -41,11 +41,10 @@ class NumpyAwareJSONEncoder(json.JSONEncoder):
         return json.JSONEncoder.default(self, obj)
 
 
-def random_sphere_points(n_points, dim):
+def random_sphere_points(n_points, dim, r=1):
     assert dim == 3
 
     # @see http://en.wikipedia.org/wiki/Spherical_coordinate_system
-    r = 1
     theta = np.random.rand(n_points) * pi
     phi = np.random.rand(n_points) * 2 * pi
 

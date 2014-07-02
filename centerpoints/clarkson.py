@@ -25,7 +25,7 @@ class ClarksonAlgo(CenterpointAlgo):
     def visualisation(self, points):
         dim = len(points[0])
         # TODO: check L size and required number of points.
-        L = (dim + 2) ** 4
+        L = (dim + 2) ** 3
         v = vis.Visualisation()
         nodes = sample_with_replacement(points, L)
         v.axis_factor = 30

@@ -66,6 +66,6 @@ class TestVisualisation(unittest.TestCase):
 
     def test_clarkson_visualisation(self):
         clarkson = ClarksonAlgo()
-        clarkson.visualisation(np.random.rand(1000, 3) * 100 + 60)
+        clarkson.visualisation(np.random.rand(100, 3) * 100 + 60)
         pyglet.app.run()
 

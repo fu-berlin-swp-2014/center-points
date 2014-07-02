@@ -6,11 +6,16 @@ from .lib import radon_point, sample_with_replacement
 
 
 class ClarksonAlgo(CenterpointAlgo):
-    def __init__(self):
-        pass
+    def __init__(self, use_tree=False):
+        self._use_tree = use_tree
 
-    # algo1
     def centerpoint(self, points):
+        if self._use_tree:
+            return self._algo1(points)
+        else:
+            return self._algo4(points)
+
+    def _algo1(self, points):
         dim = len(points[0])
         # TODO: check L size and required number of points.
         L = (dim + 2) ** 4
@@ -21,7 +26,7 @@ class ClarksonAlgo(CenterpointAlgo):
 
         return nodes[0]
 
-    def algo4(self, points):
+    def _algo4(self, points):
         dim = len(points[0])
         n = len(points)
 

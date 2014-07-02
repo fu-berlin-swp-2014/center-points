@@ -43,6 +43,12 @@ def parse_arguments(argv):
                                   help="Use the algorithm introduced by Mulzer"
                                        " and Werner.")
 
+    radon_group = parser.add_argument_group("Iterated Radon Options")
+    radon_group.add_argument("--radon-tree", action="store_true",
+                             help="Use the subexponentially dependent on d "
+                                  "Alogrithm 1.")
+    #radon_group.add_argument("--radon-tree-height" ...)
+
     parser.add_argument("points", type=argparse.FileType('r'),
                         metavar="POINTS",
                         help='File containing the points (see also Input'
@@ -114,7 +120,7 @@ def main():
 
     algorithm = None
     if options.radon:
-        algorithm = ClarksonAlgo()
+        algorithm = ClarksonAlgo(options.radon_tree)
 
     elif options.tverberg:
         algorithm = IteratedTverberg()

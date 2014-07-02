@@ -17,9 +17,8 @@ class TestLibrary(unittest.TestCase):
     def test_clarkson(self):
         points = random_sphere_points(100, 3)
 
-        a = ClarksonAlgo()
-        cpt = a.centerpoint(points)
-        cpt2 = a.algo4(points)
+        cpt = ClarksonAlgo().centerpoint(points)
+        cpt2 = ClarksonAlgo(True).centerpoint(points)
         print(cpt, cpt2)
 
         # for p in points:
@@ -31,9 +30,8 @@ class TestLibrary(unittest.TestCase):
         points = np.arange(100)
         points.shape = (100, 1)
 
-        c = ClarksonAlgo()
-        cpt = c.centerpoint(points)
-        cpt2 = c.algo4(points)
+        cpt = ClarksonAlgo().centerpoint(points)
+        cpt2 = ClarksonAlgo(True).centerpoint(points)
         print(cpt, cpt2)
 
     def test_clarkson_2d(self):
@@ -41,7 +39,6 @@ class TestLibrary(unittest.TestCase):
         for i in range(-100, 100):
             points.append([i, 2 * i])
 
-        c = ClarksonAlgo()
-        cpt = c.centerpoint(points)
-        cpt2 = c.algo4(points)
+        cpt = ClarksonAlgo().centerpoint(points)
+        cpt2 = ClarksonAlgo(True).centerpoint(points)
         print(cpt, cpt2)

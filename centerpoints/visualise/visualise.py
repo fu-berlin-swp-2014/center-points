@@ -1,19 +1,16 @@
-import ctypes
-import os
 import time
 import colorsys
-import pyglet
-from pyglet.window import key
-from pyglet.gl import *
+import sys
+
+from PySide import QtGui, QtOpenGL, QtCore
+from PySide.QtCore import QTimer, SIGNAL
+from PySide.QtGui import QLabel
 import numpy as np
 
+import OpenGL
+from OpenGL.GL import *
+from OpenGL.GLU import *
 
-def opengl_init():
-    """ Initial OpenGL configuration.
-    """
-    glEnable(GL_BLEND)
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
-    glDepthFunc(GL_LEQUAL)
 
 
 def playground():
@@ -73,38 +70,33 @@ class Color:
 
 
 class Camera(object):
-    KEY_FARER = [key.PLUS, key.NUM_ADD, key.K]
-    KEY_NEARER = [key.MINUS, key.NUM_SUBTRACT, key.J]
+    KEY_FARER = [QtCore.Qt.Key_W, QtCore.Qt.Key_Plus]
+    KEY_NEARER = [QtCore.Qt.Key_S, QtCore.Qt.Key_Minus]
 
-    KEY_DOWN_ROTATE = [key.DOWN]
-    KEY_TOP_ROTATE = [key.UP]
-    KEY_LEFT_ROTATE = [key.LEFT]
-    KEY_RIGHT_ROTATE = [key.RIGHT]
+    KEY_DOWN_ROTATE = [QtCore.Qt.Key_Down]
+    KEY_TOP_ROTATE = [QtCore.Qt.Key_Up]
+    KEY_LEFT_ROTATE = [QtCore.Qt.Key_Left]
+    KEY_RIGHT_ROTATE = [QtCore.Qt.Key_Right]
 
-    PROJECTIVE = 3
-    ISOMETRIC = 2
-    DEFAULT = 1
+    PROJECTIVE = 2
+    ISOMETRIC = 1
 
-    MODES = [DEFAULT, ISOMETRIC, PROJECTIVE]
+    MODES = [ISOMETRIC, PROJECTIVE]
 
-    mode = 1
+    mode = PROJECTIVE
     x, y, z = 0, 0, 512
-    rx, ry, rz = 30, -45, 0
+    rotx, roty, rotz = 30, -45, 0
     w, h = 640, 480
     far = 2048
     fov = 60
 
-
-    def view(self, width, height):
+    def set_size(self, width, height):
         """ Adjust window size.
         """
         self.w, self.h = width, height
         glViewport(0, 0, width, height)
         print(("Viewport " + str(width) + "x" + str(height)))
-        if self.mode == 2:
-            self.isometric()
-        else:
-            self.perspective()
+        self.update_projection()
 
     def update_projection(self):
         if self.mode == self.ISOMETRIC:
@@ -113,6 +105,7 @@ class Camera(object):
             self.perspective()
 
     def isometric(self):
+        self.mode = self.ISOMETRIC
         """ Isometric projection.
         """
         glMatrixMode(GL_PROJECTION)
@@ -123,46 +116,14 @@ class Camera(object):
     def perspective(self):
         """ Perspective projection.
         """
+        self.mode = self.PROJECTIVE
         glMatrixMode(GL_PROJECTION)
         glLoadIdentity()
         gluPerspective(self.fov, float(self.w)/self.h, 0.1, self.far)
         glMatrixMode(GL_MODELVIEW)
 
-    def key(self, symbol, modifiers):
-        """ Key pressed event handler.
-        """
-        if symbol == key.F1:
-            self.mode = 1
-            self.perspective()
-            print("Projection: Pyglet default")
-        elif symbol == key.F2:
-            print("Projection: 3D Isometric")
-            self.mode = self.ISOMETRIC
-            self.isometric()
-        elif symbol == key.F3:
-            print("Projection: 3D Perspective")
-            self.mode = self.PROJECTIVE
-            self.perspective()
-        elif self.mode == self.PROJECTIVE and symbol in self.KEY_FARER:
-            self.fov -= 3
-            self.update_projection()
-        elif self.mode == self.PROJECTIVE and symbol in self.KEY_NEARER:
-            self.fov += 3
-            self.perspective()
-        elif symbol in self.KEY_LEFT_ROTATE:
-            self.ry -= 4.
-        elif symbol in self.KEY_RIGHT_ROTATE:
-            self.ry += 4.
-        elif symbol in self.KEY_TOP_ROTATE:
-            self.rx += 4
-        elif symbol in self.KEY_DOWN_ROTATE:
-            self.rx -= 4
-        else:
-            print("KEY " + key.symbol_string(symbol))
-
     def drag(self, x, y, dx, dy, button, modifiers):
-        """ Mouse drag event handler.
-        """
+        """ Mouse drag event handler. """
         if button == 1:
             self.x -= dx*2
             self.y -= dy*2
@@ -170,18 +131,18 @@ class Camera(object):
             self.x -= dx*2
             self.z -= dy*2
         elif button == 4:
-            self.ry += dx/4.
-            self.rx -= dy/4.
+            self.roty += dx/4.
+            self.rotx -= dy/4.
 
     def apply(self):
-        """ Apply camera transformation.
-        """
+        """ Apply camera transformation. """
         glLoadIdentity()
-        if self.mode == 1: return
+        if self.mode == 1:
+            return
         glTranslatef(-self.x, -self.y, -self.z)
-        glRotatef(self.rx, 1, 0, 0)
-        glRotatef(self.ry, 0, 1, 0)
-        glRotatef(self.rz, 0, 0, 1)
+        glRotatef(self.rotx, 1, 0, 0)
+        glRotatef(self.roty, 0, 1, 0)
+        glRotatef(self.rotz, 0, 0, 1)
 
 
 def gl_array(list):
@@ -214,7 +175,7 @@ def draw_point(point, color, size=1):
     glBegin(GL_POINTS)
     glColor4f(*color)
     glVertex3f(*point)
-    glEnd(GL_POINTS)
+    glEnd()
     glPointSize(1)
 
 
@@ -228,24 +189,119 @@ def numpy2polygons(polygons):
     return np.array([numpy2polygon(p) for p in polygons], dtype=np.float32)
 
 
-class Visualisation(pyglet.window.Window):
-    """
-    A wrapper over OpenGL primitives.
+class VisualisationWindow(QtGui.QWidget):
+    def __init__(self, visualisation, parent=None):
+        QtGui.QWidget.__init__(self, parent)
+        self._glWidget = GLWidget(visualisation)
+        self._stepsWidget = QtGui.QVBoxLayout()
+        self._visualisation = visualisation
+        mainLayout = QtGui.QHBoxLayout()
+        # mainLayout.addLayout(self._stepsWidget)
+        mainLayout.addWidget(self._glWidget)
+        self.setLayout(mainLayout)
+        self.setWindowTitle(self.tr("Hello GL"))
 
-    """
+    def refreshSteps(self):
+        for i, s in enumerate(self._visualisation._steps):
+            if s.description is None:
+                s.description = "Step: " + str(i)
+            self._stepsWidget.addWidget(s.qtwidget())
+
+
+class GLWidget(QtOpenGL.QGLWidget):
+    def __init__(self, visualisation, parent=None, cam=None, fps=30):
+        QtOpenGL.QGLWidget.__init__(self, parent)
+        if cam is None:
+            cam = Camera()
+
+        self.cam = cam
+        self.visualisation = visualisation
+        self.initOpenGL()
+        self.lastPos = QtCore.QPoint()
+        self.timer = QTimer()
+        self.connect(self.timer, SIGNAL("timeout()"), self.updateGL)
+        self.timer.start()
+        self.timer.setInterval(1000 / fps)
+
+    def initOpenGL(self):
+        """ Initial OpenGL configuration. """
+        glEnable(GL_BLEND)
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+        glDepthFunc(GL_LEQUAL)
+
+    def paintGL(self):
+        print("paint!!")
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+        self.cam.apply()
+        self.visualisation.draw()
+
+    def repaint(self, *args, **kwargs):
+        self.paintGL()
+
+    def resizeGL(self, width, height):
+        self.cam.set_size(width, height)
+
+    def mousePressEvent(self, event):
+        self.lastPos = QtCore.QPoint(event.pos())
+
+    def mouseMoveEvent(self, event):
+        dx = event.x() - self.lastPos.x()
+        dy = event.y() - self.lastPos.y()
+        print("dx: " + str(dx))
+        if event.buttons() & QtCore.Qt.LeftButton:
+            self.cam.rotx += dy
+            self.cam.roty += dx
+        elif event.buttons() & QtCore.Qt.RightButton:
+            self.cam.rotx += 8 * dy
+            self.cam.roty += 8 * dx
+
+        self.lastPos = QtCore.QPoint(event.pos())
+
+    def keyPressEvent(self, event):
+        bottons = event.buttons()
+        print("press event: " + event.text())
+
+        if bottons & QtCore.Qt.KEY_P:
+            self.cam.perspective()
+        elif bottons & QtCore.Qt.KEY_I:
+            self.isometric()
+        elif self.cam.mode == self.PROJECTIVE \
+                and self._is_in(bottons, self.KEY_FARER):
+            self.cam.fov -= 3
+            self.cam.update_projection()
+        elif self.cam.mode == self.PROJECTIVE \
+                and self._is_in(bottons, self.KEY_NEARER):
+            self.cam.fov += 3
+            self.cam.perspective()
+        elif self._is_in(bottons, self.KEY_LEFT_ROTATE):
+            self.roty -= 4.
+        elif self._is_in(bottons, self.KEY_RIGHT_ROTATE):
+            self.roty += 4.
+        elif self._is_in(bottons, self.KEY_TOP_ROTATE):
+            self.rotx += 4
+        elif self._is_in(bottons, self.KEY_DOWN_ROTATE):
+            self.rotx -= 4
+
+    @staticmethod
+    def _is_in(buttons, keys):
+        for k in keys:
+            if buttons & k:
+                return True
+        return False
+
+
+class Visualisation():
     def __init__(self):
         self.display_axis = True
-        super(Visualisation, self).__init__(resizable=True)
-        opengl_init()
-        self.cam = Camera()
-        self.cam.x = 100
-        self.on_resize = self.cam.view
-        self.on_key_press = self.cam.key
-        self.on_mouse_drag = self.cam.drag
+
+        self.app = QtGui.QApplication(sys.argv)
+        self.window = VisualisationWindow(self)
         self._current_step = Step()
         self._steps = [self._current_step]
         self.steps_delay = 1
         self.axis_factor = 100
+        self._start_time = time.time()
+        self.duration = 10
 
     def axis(self):
         """ Define vertices and colors for 3 planes
@@ -273,15 +329,10 @@ class Visualisation(pyglet.window.Window):
         draw_vertex_array(vertices, colors, GL_QUADS)
         glDisable(GL_DEPTH_TEST)
 
-    def on_draw(self):
-        self.clear()
-        self.cam.apply()
-        if self.display_axis:
-            self.draw_axis()
-
-        playground()
-        for step in self._steps:
-            step.draw()
+    def draw(self):
+        self.draw_axis()
+        for s in self._steps:
+            s.draw()
 
     def add(self, elem):
         self._current_step.add(elem)
@@ -297,9 +348,17 @@ class Visualisation(pyglet.window.Window):
             points = np.vstack((points, points[-1, :]))
         self.add(Polygons(np.array([points]), color))
 
-    def next_step(self, step):
+    def next_step(self, step=None):
+        if step is None:
+            step = Step()
+
         self._current_step = step
         self._steps.append(step)
+
+    def show(self):
+        # self.window.refreshSteps()
+        self.window.show()
+        self.app.exec_()
 
 
 class ColorGroup:
@@ -314,7 +373,8 @@ class ColorGroup:
         h = index / self.n_groups
         s = 1
         v = 1
-        alpha = index / (2*self.n_groups) + 0.5
+        r = 4
+        alpha = index / ((1 - 1/r)*self.n_groups) + 1/r
         return colorsys.hsv_to_rgb(h, s, v) + (alpha, )
 
 class ColorGroupMember:
@@ -326,11 +386,11 @@ class ColorGroupMember:
         return self._color_group.get_color(self._i)
 
 
-
 class Step:
     def __init__(self, description=""):
-        self._description = description
+        self.description = description
         self._elems = []
+        self.visible = False
 
     def add(self, elem):
         self._elems.append(elem)
@@ -339,17 +399,33 @@ class Step:
         for elem in self._elems:
             elem.draw()
 
+    def qtwidget(self):
+        label = QLabel()
+        label.setText(self.description)
 
-class Polygons():
+
+
+class AnimationStep(object):
+    def __init__(self):
+        self.start = 0
+        self.end = sys.maxsize
+
+    def is_active(self, current_step):
+        return self.start <= current_step <= self.end
+
+
+class Polygons(AnimationStep):
     def __init__(self, polygons, colors=None, wireframe=None):
         """
-        Add a polygon to the visualisation step.
-        :param polygons:  ndarray with a (n, m, 3)-shape, where n is the number
-                          of polygons and m is the number of points of a polygon.
-        :param colors:    ndarray with a (p, 4)-shape, where p is the total
-                          number points. Each row represents a color
-                          `[r, g, b, a]`.
-        """
+            Add a polygon to the visualisation step.
+            :param wireframe:
+            :param polygons:  ndarray with a (n, m, 3)-shape, where n is the number
+                              of polygons and m is the number of points of a polygon.
+            :param colors:    ndarray with a (p, 4)-shape, where p is the total
+                              number points. Each row represents a color
+                              `[r, g, b, a]`.
+            """
+        super(Polygons, self).__init__()
         self._polygons = numpy2polygons(polygons)
         self._n_polygons, _, _ = self._polygons.shape
         self._colors = Color(colors)
@@ -357,12 +433,14 @@ class Polygons():
     def draw(self):
         glLineWidth(1)
         glPolygonMode(GL_FRONT_AND_BACK, GL_LINE)
+        glEnable(GL_DEPTH_TEST)
         for polygon in self._polygons:
             gl_polygon = gl_array(polygon.flatten().tolist())
             print(str(gl_polygon[0]))
             print(self._colors._color)
             draw_vertex_array(gl_polygon, self._colors, GL_POLYGON)
 
+        glDisable(GL_DEPTH_TEST)
         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)
 
 
@@ -370,9 +448,10 @@ class ConvexHulls(Polygons):
     pass
 
 
-class RadonPartition():
+class RadonPartition(AnimationStep):
     # FIXME: generalise color from ColorGroup
     def __init__(self, smaller_points, bigger_points, radon_point, color):
+        super(RadonPartition, self).__init__()
         self._smaller = smaller_points
         self._bigger = bigger_points
         self._radon_point = radon_point
@@ -407,8 +486,9 @@ class PointGroups():
         return colorsys.hsv_to_rgb(h, s, v) + (1, )  # set alpha
 
 
-class Points():
+class Points(AnimationStep):
     def __init__(self, points, colors=None, size=1):
+        super(Points, self).__init__()
         self._n_points, _ = points.shape
         self._points = points.astype(np.float32)
         self._colors = Color(colors)
@@ -422,12 +502,3 @@ class Points():
         draw_vertex_array(gl_array(self._points.flatten().tolist()),
                           self._colors, GL_POINTS)
         glPointSize(1)
-
-if __name__ == '__main__':
-    print("OpenGL Projections")
-    print("---------------------------------")
-    print("Projection matrix -> F1, F2, F3")
-    print("Camera -> Drag LMB, CMB, RMB")
-    print("")
-    window = Visualisation()
-    pyglet.app.run()

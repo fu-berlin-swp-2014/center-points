@@ -1,6 +1,8 @@
 import math
 import unittest
+import sys
 import numpy as np
+from PySide import QtGui
 
 from centerpoints.clarkson import ClarksonAlgo
 from centerpoints.visualise.visualise \
@@ -48,7 +50,7 @@ class TestVisualisation(unittest.TestCase):
         ]]) * 100 + 100, (1, 0, 0, 1))
         vis.add(polygons)
         vis.draw_axes = True
-        pyglet.app.run()
+        vis.show()
 
     def test_pointgroups(self):
         group = PointGroups()
@@ -66,6 +68,4 @@ class TestVisualisation(unittest.TestCase):
 
     def test_clarkson_visualisation(self):
         clarkson = ClarksonAlgo()
-        clarkson.visualisation(np.random.rand(100, 3) * 100 + 60)
-        pyglet.app.run()
-
+        clarkson.visualisation(random_sphere_points(5000, 3) * 200)

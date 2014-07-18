@@ -25,7 +25,7 @@ class ClarksonAlgo(CenterpointAlgo):
     def visualisation(self, points):
         dim = len(points[0])
         # TODO: check L size and required number of points.
-        L = (dim + 2) ** 3
+        L = (dim + 2) ** 4
         v = vis.Visualisation()
         nodes = sample_with_replacement(points, L)
         v.axis_factor = 30
@@ -37,12 +37,14 @@ class ClarksonAlgo(CenterpointAlgo):
             new_nodes = []
             color = colorgroup.next_member()
             for chunk in chunks(nodes, dim + 2):
+
                 (smaller, bigger), radon_pt, _ = radon_partition(chunk)
                 v.add(vis.RadonPartition(smaller, bigger, radon_pt, color))
                 new_nodes.append(radon_pt)
-
+            v.next_step()
             nodes = new_nodes
         v.point(nodes[0], (1, 1, 1, 1), 5)
+        v.show()
         return nodes[0]
 
 

@@ -189,33 +189,91 @@ def numpy2polygons(polygons):
     return np.array([numpy2polygon(p) for p in polygons], dtype=np.float32)
 
 
-class VisualisationWindow(QtGui.QWidget):
-    def __init__(self, visualisation, parent=None):
-        QtGui.QWidget.__init__(self, parent)
-        self._glWidget = GLWidget(visualisation)
-        self._stepsWidget = QtGui.QVBoxLayout()
-        self._visualisation = visualisation
-        mainLayout = QtGui.QHBoxLayout()
-        # mainLayout.addLayout(self._stepsWidget)
-        mainLayout.addWidget(self._glWidget)
-        self.setLayout(mainLayout)
+class VisualisationWindow(QtGui.QMainWindow):
+    def __init__(self, visual_render, parent=None):
+        QtGui.QMainWindow.__init__(self, parent)
+
+        self.refreshed = False
+        self._visual_render = visual_render
+
+        self._glWidget = GLWidget()
+        self._glWidget.draw = visual_render.draw
+        self._stepsList = QtGui.QListWidget()
+        self._stepsList.setMaximumWidth(200)
+        self._stepsList.setSelectionMode(QtGui.QAbstractItemView.MultiSelection)
+
+        for i, s in enumerate(self._visual_render._visualisation._steps):
+            if s.description is None or s.description == "":
+                s.description = "Step: " + str(i)
+            # w = s.qtwidget()
+            self._stepsList.addItem(s.description)
+
+        self._mainLayout = QtGui.QHBoxLayout()
+        self._mainLayout.addWidget(self._stepsList)
+        self._glOptionLayout = QtGui.QVBoxLayout()
+        self._glOptionLayout.addWidget(self._glWidget)
+
+        self._optionLayout = QtGui.QHBoxLayout()
+        self._animate_btn = QtGui.QPushButton("Animate")
+        self._animate_btn.setCheckable(True)
+        self._animate_btn.clicked.connect(
+            lambda: self._visual_render.toggle_animation())
+
+        self._optionLayout.addWidget(self._animate_btn)
+
+        self._animate_slider = QtGui.QSlider(QtCore.Qt.Horizontal)
+        self._animate_slider.valueChanged.connect(
+            lambda s: self._visual_render.set_animation_speed((100 - s) / 10))
+
+        self._optionLayout.addWidget(QLabel("Animation Speed:"))
+        self._optionLayout.addWidget(self._animate_slider)
+
+        self._show_axis_btn = QtGui.QPushButton("Show Coordinate System")
+        self._show_axis_btn.setCheckable(True)
+        self._show_axis_btn.clicked.connect(
+            self._visual_render.toggle_axis)
+        self._optionLayout.addWidget(self._show_axis_btn)
+
+        self._glOptionLayout.addLayout(self._optionLayout)
+
+        self._mainLayout.addLayout(self._glOptionLayout)
+
+        self._stepsList.selectAll()
+
+        self._stepsList.connect(SIGNAL("itemSelectionChanged()"),
+                                self.changedSelection)
+
+        self.menu = QtGui.QMenu("Algorithm", self)
+        self.menuBar().addMenu(self.menu)
+
+        central_widget = QtGui.QWidget()
+        central_widget.setLayout(self._mainLayout)
+        self.setCentralWidget(central_widget)
         self.setWindowTitle(self.tr("Hello GL"))
 
-    def refreshSteps(self):
-        for i, s in enumerate(self._visualisation._steps):
-            if s.description is None:
-                s.description = "Step: " + str(i)
-            self._stepsWidget.addWidget(s.qtwidget())
+    def select_algorithm(self):
+        pass
+
+    def select_training_data(self):
+        pass
+
+    def select_file(self):
+        pass
+
+    def changedSelection(self):
+        indexes = [i.row() for i in self._stepsList.selectedIndexes()]
+        steps = self._visual_render._visualisation._steps
+        for i in range(len(steps)):
+            steps[i].selected = i in indexes
 
 
 class GLWidget(QtOpenGL.QGLWidget):
-    def __init__(self, visualisation, parent=None, cam=None, fps=30):
+    def __init__(self, parent=None, cam=None, fps=30):
         QtOpenGL.QGLWidget.__init__(self, parent)
         if cam is None:
             cam = Camera()
 
         self.cam = cam
-        self.visualisation = visualisation
         self.initOpenGL()
         self.lastPos = QtCore.QPoint()
         self.timer = QTimer()
@@ -230,10 +288,9 @@ class GLWidget(QtOpenGL.QGLWidget):
         glDepthFunc(GL_LEQUAL)
 
     def paintGL(self):
-        print("paint!!")
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
         self.cam.apply()
-        self.visualisation.draw()
+        self.draw()
 
     def repaint(self, *args, **kwargs):
         self.paintGL()
@@ -247,7 +304,6 @@ class GLWidget(QtOpenGL.QGLWidget):
     def mouseMoveEvent(self, event):
         dx = event.x() - self.lastPos.x()
         dy = event.y() - self.lastPos.y()
-        print("dx: " + str(dx))
         if event.buttons() & QtCore.Qt.LeftButton:
             self.cam.rotx += dy
             self.cam.roty += dx
@@ -259,7 +315,6 @@ class GLWidget(QtOpenGL.QGLWidget):
 
     def keyPressEvent(self, event):
         bottons = event.buttons()
-        print("press event: " + event.text())
 
         if bottons & QtCore.Qt.KEY_P:
             self.cam.perspective()
@@ -290,18 +345,27 @@ class GLWidget(QtOpenGL.QGLWidget):
         return False
 
 
-class Visualisation():
-    def __init__(self):
-        self.display_axis = True
-
-        self.app = QtGui.QApplication(sys.argv)
-        self.window = VisualisationWindow(self)
-        self._current_step = Step()
-        self._steps = [self._current_step]
+class VisualRender:
+    def __init__(self, visualisation):
+        self._visualisation = visualisation
         self.steps_delay = 1
-        self.axis_factor = 100
+        self.axis_factor = 50
         self._start_time = time.time()
-        self.duration = 10
+        self.animation_speed = 1
+        self.animation = False
+        self.show_axis = True
+
+    def show(self):
+        window = VisualisationWindow(self)
+        window.show()
+
+    def set_animation_speed(self, speed):
+        " set speed between 0 and 100, where 10 is equals to a second"
+        print(speed)
+        self.animation_speed = speed / 10
+
+    def toggle_axis(self):
+        self.show_axis = not self.show_axis
 
     def axis(self):
         """ Define vertices and colors for 3 planes
@@ -330,9 +394,37 @@ class Visualisation():
         glDisable(GL_DEPTH_TEST)
 
     def draw(self):
-        self.draw_axis()
-        for s in self._steps:
-            s.draw()
+        if self.show_axis:
+            self.draw_axis()
+
+        selected_steps = [s for s in self._visualisation._steps if s.selected]
+        n = len(selected_steps)
+        if self.animation:
+            n_visible = (time.time() % (n*self.animation_speed)) \
+                        / self.animation_speed - 1
+        else:
+            n_visible = n
+        print(n_visible)
+        for i, s in enumerate(selected_steps):
+            if i < n_visible:
+                s.draw()
+
+    def toggle_animation(self):
+        self.animation = not self.animation
+
+    def speed_up(self):
+        self.animation_speed += 1
+
+    def speed_down(self):
+        self.animation_speed -= 1
+
+
+class Visualisation():
+    def __init__(self):
+        self.display_axis = True
+        self.app = QtGui.QApplication(sys.argv)
+        self._current_step = Step()
+        self._steps = [self._current_step]
 
     def add(self, elem):
         self._current_step.add(elem)
@@ -356,8 +448,7 @@ class Visualisation():
         self._steps.append(step)
 
     def show(self):
-        # self.window.refreshSteps()
-        self.window.show()
+        VisualRender(self).show()
         self.app.exec_()
 
 
@@ -377,6 +468,7 @@ class ColorGroup:
         alpha = index / ((1 - 1/r)*self.n_groups) + 1/r
         return colorsys.hsv_to_rgb(h, s, v) + (alpha, )
 
+
 class ColorGroupMember:
     def __init__(self, color_group, i):
         self._color_group = color_group
@@ -390,7 +482,7 @@ class Step:
     def __init__(self, description=""):
         self.description = description
         self._elems = []
-        self.visible = False
+        self.selected = True
 
     def add(self, elem):
         self._elems.append(elem)
@@ -400,8 +492,7 @@ class Step:
             elem.draw()
 
     def qtwidget(self):
-        label = QLabel()
-        label.setText(self.description)
+        return QLabel(self.description)
 
 
 
@@ -436,8 +527,6 @@ class Polygons(AnimationStep):
         glEnable(GL_DEPTH_TEST)
         for polygon in self._polygons:
             gl_polygon = gl_array(polygon.flatten().tolist())
-            print(str(gl_polygon[0]))
-            print(self._colors._color)
             draw_vertex_array(gl_polygon, self._colors, GL_POLYGON)
 
         glDisable(GL_DEPTH_TEST)

@@ -67,16 +67,13 @@ class IteratedTverberg(CenterpointAlgo):
                     proof.append(X2)
 
                     for m in non_hull:
-                        B[0].append((m,[[(1, m)]]))
+                        B[0].append((m, [[(1, m)]]))
 
                     pass
-
-
 
             B[l].append((radon_pt, proof))
             pass
         return B[z][0][0]
-
 
 
 # Let l be the max such that B_l−1 has at least d + 2 points
@@ -110,7 +107,7 @@ def _prune2(X):
 def _prune(alphas, hull, non_hull=[]):
     # Remove all coefficients that are already (close to) zero.
     idx_nonzero = ~ np.isclose(alphas, np.zeros_like(alphas))  # alphas != 0
-    #print(idx_nonzero, alphas, hull)
+
     alphas = alphas[idx_nonzero]
     non_hull = list(hull[~idx_nonzero]) + non_hull
     hull = hull[idx_nonzero]
@@ -151,15 +148,11 @@ def _prune(alphas, hull, non_hull=[]):
     # be updated automatically.
     _alphas[:] = _alphas - (lambdas[lambda_min_idx] * betas)
 
-    #print("alphas':", alphas, "\nhull:", hull, "\nbetas:", betas, "\nid:", lambda_min_idx)
-
     # Remove (filter) the pruned hull vector.
     idx = np.arange(n) != lambda_min_idx
     hull = hull[idx]
     non_hull.append(hull[lambda_min_idx])
     alphas = alphas[idx]
-
-    #print("pt:", alphas.dot(hull), alphas.dtype)
 
     return _prune(alphas, hull, non_hull)
 

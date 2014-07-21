@@ -6,7 +6,7 @@ import json
 from .iterated_radon import IteratedRadon
 from .iterated_tverberg import IteratedTverberg
 from .helpers import has_valid_dimension, has_valid_type, NumpyAwareJSONEncoder
-from .benchmark import  benchmark
+from .benchmark import benchmark
 
 
 def parse_arguments(argv):
@@ -47,7 +47,7 @@ def parse_arguments(argv):
     radon_group.add_argument("--radon-tree", action="store_true",
                              help="Use the subexponentially dependent on d "
                                   "Alogrithm 1.")
-    #radon_group.add_argument("--radon-tree-height" ...)
+    # radon_group.add_argument("--radon-tree-height" ...)
 
     parser.add_argument("points", type=argparse.FileType('r'),
                         metavar="POINTS",

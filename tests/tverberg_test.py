@@ -14,8 +14,6 @@ class TestLibrary(unittest.TestCase):
         for i in range(n_points):
             pass
 
-
-
     def test_tverberg(self):
         points = random_sphere_points(50000, 3)
 
@@ -31,7 +29,7 @@ class TestLibrary(unittest.TestCase):
     def test_tverberg_1d(self):
         points = np.arange(2000)
         np.random.shuffle(points)
-        points.shape = (2000,1)
+        points.shape = (2000, 1)
 
         c = IteratedTverberg()
         cpt = c.centerpoint(points)

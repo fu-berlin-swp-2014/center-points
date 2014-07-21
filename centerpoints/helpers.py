@@ -57,7 +57,6 @@ def random_sphere_points(n_points, dim, r=1):
 
 def sphere_points(n, dim, r=1):
     """
-
     :param n: At least n points will be generated.
     :param dim:
     """
@@ -73,14 +72,17 @@ def sphere_points(n, dim, r=1):
     angspace[:-1] = np.linspace(0, pi, n_dim)
     angspace[-1] = np.linspace(0, 2 * pi, n_dim + 1)[:-1]
 
-    # Create an array of n - 1 angles for each point.
+    # Build the cartesian product to generate n_total points (combinations).
     # There are no two points with the same angles.
     # TODO: Problem in regard to f.ex.h sin 0 =~= pi
-    ang = np.zeros((dim - 1, n_total), dtype=np.float64)
-    for i in range(n_total):
-        for j in range(dim - 1):
-            k = (i // (n_dim ** j)) % n_dim
-            ang[j][i] = angspace[j][k]
+    ang = cartesian(angspace).T
+
+    # Create an array of n - 1 angles for each point.
+    # ang = np.zeros((dim - 1, n_total), dtype=np.float64)
+    # for i in range(n_total):
+    #     for j in range(dim - 1):
+    #         k = (i // (n_dim ** j)) % n_dim
+    #         ang[j][i] = angspace[j][k]
 
     # The spherical coordinates will be calculated as shown in
     # @see http://en.wikipedia.org/wiki/N-sphere#Spherical_coordinates
@@ -98,3 +100,56 @@ def sphere_points(n, dim, r=1):
     np.random.shuffle(points)
 
     return points
+
+
+def cartesian(arrays, out=None):
+    """
+    Generate a cartesian product of input arrays.
+
+    Parameters
+    ----------
+    arrays : list of array-like
+        1-D arrays to form the cartesian product of.
+    out : ndarray
+        Array to place the cartesian product in.
+
+    Returns
+    -------
+    out : ndarray
+        2-D array of shape (M, len(arrays)) containing cartesian products
+        formed of input arrays.
+
+    Examples
+    --------
+    >>> cartesian(([1, 2, 3], [4, 5], [6, 7]))
+    array([[1, 4, 6],
+           [1, 4, 7],
+           [1, 5, 6],
+           [1, 5, 7],
+           [2, 4, 6],
+           [2, 4, 7],
+           [2, 5, 6],
+           [2, 5, 7],
+           [3, 4, 6],
+           [3, 4, 7],
+           [3, 5, 6],
+           [3, 5, 7]])
+
+
+    (c) http://stackoverflow.com/a/1235363
+    """
+
+    arrays = [np.asarray(x) for x in arrays]
+    dtype = arrays[0].dtype
+
+    n = np.prod([x.size for x in arrays])
+    if out is None:
+        out = np.zeros([n, len(arrays)], dtype=dtype)
+
+    m = n / arrays[0].size
+    out[:, 0] = np.repeat(arrays[0], m)
+    if arrays[1:]:
+        cartesian(arrays[1:], out=out[0:m, 1:])
+        for j in range(1, arrays[0].size):
+            out[j*m:(j+1)*m, 1:] = out[0:m, 1:]
+    return out

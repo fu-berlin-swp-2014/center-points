@@ -5,6 +5,7 @@ import numpy.testing as nptest
 
 import centerpoints.lib as lib
 
+
 class TestLibrary(unittest.TestCase):
     def setUp(self):
         # { dimension -> points }

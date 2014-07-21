@@ -13,7 +13,6 @@ class TestLibrary(unittest.TestCase):
         for i in range(n_points):
             pass
 
-
     def test_radon(self):
         points = random_sphere_points(100, 3)
 

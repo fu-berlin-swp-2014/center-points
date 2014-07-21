@@ -3,7 +3,7 @@ import sys
 import csv
 import json
 
-from .clarkson import ClarksonAlgo
+from .iterated_radon import IteratedRadon
 from .iterated_tverberg import IteratedTverberg
 from .helpers import has_valid_dimension, has_valid_type, NumpyAwareJSONEncoder
 from .benchmark import  benchmark
@@ -120,7 +120,7 @@ def main():
 
     algorithm = None
     if options.radon:
-        algorithm = ClarksonAlgo(options.radon_tree)
+        algorithm = IteratedRadon(options.radon_tree)
 
     elif options.tverberg:
         algorithm = IteratedTverberg()

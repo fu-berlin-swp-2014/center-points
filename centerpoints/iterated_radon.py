@@ -5,7 +5,7 @@ from .helpers import chunks
 from .lib import radon_point, sample_with_replacement
 
 
-class ClarksonAlgo(CenterpointAlgo):
+class IteratedRadon(CenterpointAlgo):
     def __init__(self, use_tree=False):
         self._use_tree = use_tree
 

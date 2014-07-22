@@ -8,6 +8,8 @@ from os import path
 import numpy as np
 
 from centerpoints.benchmark import benchmark
+from centerpoints.data_set import sphere_surface, sphere_volume, cube, \
+    cube_surface
 
 from centerpoints.helpers import uniform_sphere_points, \
     uniform_sphere_points_volume, normal_distributed_points, \
@@ -63,11 +65,20 @@ def benchmarks(repeat=None, size=None, radius=None):
             "dim": 3
         },
 
+        "sphere-5d": {
+            "title": "Sphere Surface 5D b",
+            "generator": uniform_sphere_points,
+            "repeat": repeat,
+            "size": size,
+            "radius": radius,
+            "dim": 5
+        },
+
         "sphere-10d": {
             "title": "Sphere (10D)",
             "generator": uniform_sphere_points,
             "repeat": repeat,
-            "size": size,
+            "size": 15000,
             "radius": radius,
             "dim": 10
         },
@@ -90,16 +101,151 @@ def benchmarks(repeat=None, size=None, radius=None):
             "dim": 3
         },
 
-        "normal-10d": {
-            "title": "Normal distribution (10D)",
+        "normal-5d": {
+            "title": "Normal distribution (3D)",
             "generator": _(normal_distributed_points),
             "repeat": repeat,
             "size": size,
             "radius": None,
+            "dim": 5
+        },
+
+        "normal-10d": {
+            "title": "Normal distribution (10D)",
+            "generator": _(normal_distributed_points),
+            "repeat": repeat,
+            "size": 15000,
+            "radius": radius,
             "dim": 10
         },
 
-        # "cube": ..
+        # Other testdata
+        "circle-surface": {
+            "title": "Circle Surface b",
+            "generator": _(sphere_surface),
+            "repeat": repeat,
+            "size": size,
+            "radius": 1,
+            "dim": 2
+        },
+
+        "circle-volume": {
+            "title": "Circle Volume b",
+            "generator": _(sphere_volume),
+            "repeat": repeat,
+            "size": size,
+            "radius": 1,
+            "dim": 2
+        },
+
+        "sphere-surface": {
+            "title": "Sphere Surface b",
+            "generator": _(sphere_surface),
+            "repeat": repeat,
+            "size": size,
+            "radius": 1,
+            "dim": 3
+        },
+
+        "sphere-volume": {
+            "title": "Solid Volume b",
+            "generator": _(sphere_volume),
+            "repeat": repeat,
+            "size": size,
+            "radius": 1,
+            "dim": 3
+        },
+
+        "sphere-surface-5d": {
+            "title": "Sphere Surface 5D b",
+            "generator": _(sphere_surface),
+            "repeat": repeat,
+            "size": size,
+            "radius": 1,
+            "dim": 5
+        },
+
+        "sphere-volume-5d": {
+            "title": "Solid Volume 5D b",
+            "generator": _(sphere_volume),
+            "repeat": repeat,
+            "size": size,
+            "radius": 1,
+            "dim": 5
+        },
+
+        "sphere-surface-10d": {
+            "title": "Sphere Surface 10D b",
+            "generator": _(sphere_surface),
+            "repeat": repeat,
+            "size": 15000,
+            "radius": 1,
+            "dim": 10
+        },
+
+        "sphere-volume-10d": {
+            "title": "Solid Volume 10D b",
+            "generator": _(sphere_volume),
+            "repeat": repeat,
+            "size": 15000,
+            "radius": 1,
+            "dim": 10
+        },
+
+        "square-surface": {
+            "title": "Square Surface b",
+            "generator": _(cube_surface),
+            "repeat": repeat,
+            "size": size,
+            "radius": 1,
+            "dim": 2
+        },
+
+        "square-volume": {
+            "title": "Square Volume b",
+            "generator": _(cube),
+            "repeat": repeat,
+            "size": size,
+            "radius": 1,
+            "dim": 2
+        },
+
+        "cube-surface": {
+            "title": "Cube Surface b",
+            "generator": _(cube_surface),
+            "repeat": repeat,
+            "size": size,
+            "radius": 1,
+            "dim": 3
+        },
+
+        "cube-volume": {
+            "title": "Cube Volume b",
+            "generator": _(cube),
+            "repeat": repeat,
+            "size": size,
+            "radius": 1,
+            "dim": 3
+        },
+
+        "cube-surface-5d": {
+            "title": "Cube Surface 5D b",
+            "generator": _(cube_surface),
+            "repeat": repeat,
+            "size": size,
+            "radius": 1,
+            "dim": 5
+        },
+
+        "cube-volume-5d": {
+            "title": "Cube Volume 5D b",
+            "generator": _(cube),
+            "repeat": repeat,
+            "size": size,
+            "radius": 1,
+            "dim": 5
+        },
+
     }
 
 
@@ -136,7 +282,7 @@ def run_benchmarks(benchmarks, output_dir, seed):
 
         points = generator(size, dim, radius)
 
-        for algorithm in algorithms:
+        for i, algorithm in enumerate(algorithms):
             print("Run " + title + " with " + algorithm[1])
 
             # TODO: Reset seed again????
@@ -177,7 +323,7 @@ def run_benchmarks(benchmarks, output_dir, seed):
 
             # Store the results as csv and json
             algoname = type(algorithm[0]).__name__
-            basename = path.join(output_dir, name + "-" + algoname)
+            basename = path.join(output_dir, name + "-" + i + "-" + algoname)
             # with open(baseFileName + ".csv", mode="w") as f:
             # writer = csv.writer(f)
             #     writer.writerows(zip(timings, results, distances))
@@ -206,7 +352,8 @@ if __name__ == "__main__":
     parser.add_argument("--repeat", type=int, default=10, required=False,
                         help="Repeat each benchmark REPEAT times.")
     parser.add_argument("--size", type=int, default=5000, required=False,
-                        help="Generate SIZE points for each benchmark.")
+                        help="Generate SIZE points for each benchmark without "
+                             "a fixed size.")
     parser.add_argument("--radius", type=int, default=50, required=False,
                         help="Set the radius if applicable (f.ex. spheres).")
     parser.add_argument("--seed", type=int, default=None, required=False,

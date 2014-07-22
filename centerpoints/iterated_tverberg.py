@@ -6,9 +6,8 @@ import numpy as np
 from numpy import log, ceil
 
 from centerpoints.helpers import pop
-from centerpoints.lib import solve_homogeneous2
-from .interfaces import CenterpointAlgo
-from .lib import radon_partition
+from centerpoints.lib import solve_homogeneous2, radon_partition
+from centerpoints.interfaces import CenterpointAlgo
 
 
 class IteratedTverberg(CenterpointAlgo):

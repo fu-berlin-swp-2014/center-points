@@ -58,10 +58,13 @@ def radon_partition(points):
     points : (n, d)-array_like
         where n is the number of points and d the dimension of the points
 
-    Return the radon partitions I and J, the radon point and its alphas.
-        (I, J),
+    Return the radon point, the factors for the partition I and the partition J
+        and two masking arrays, representing the partitions in reference to the
+        input array.
+
         (radon point),
-        (alphas_I, alphas_J)
+        (alpha_I, alpha_J),
+        (mask_I, mask_J)
     """
     _points = np.asarray(points)
     n, d = _points.shape

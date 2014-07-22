@@ -1,8 +1,12 @@
 # -*- coding: utf-8 -*-
 
+from itertools import compress
+
 import numpy as np
 from numpy import log, ceil
 
+from centerpoints.helpers import pop
+from centerpoints.lib import solve_homogeneous2
 from .interfaces import CenterpointAlgo
 from .lib import radon_partition
 
@@ -13,66 +17,76 @@ class IteratedTverberg(CenterpointAlgo):
         points = np.asarray(points)
         n, d = points.shape
 
-        # The loop terminates when a point is in the Bucket B_z
+        # The loop terminates when a point is in the bucket B_z
         z = int(ceil(log(ceil(n / (2 * ((d + 1) ** 2))))))
 
-        # Initialize empty stacks
+        # Initialize empty stacks / buckets
         B = [[] for l in range(z+1)]
 
-        # Push initial points with trival proofs
+        # Push initial points with trivial proofs
+        # Proofs consist of a factor and a hull.
         for s in points:
-            p = [(1, s)]
-            B[0].append((s, [p]))
+            # TODO (one could copy the proof to be save)
+            proof = [(1, s)]
+            B[0].append((s, [proof]))
 
         while len(B[z]) == 0:
             # Initialize proof to be an empty stack
             proof = []
 
             # Let l be the max such that B_l−1 has at least d + 2 points
-            # ToDO: optimize
+            # ToDO: optimize?
             l = find_l(B, d)
 
             # Pop d + 2 points q_1 , . . . , q_d+2 from B_l−1
-            qpoints = np.asarray(list(pop(B[l-1], d + 2)), dtype=object)
+            # qs denotes the list of points q_1 to q_d+2
+            # qss denotes the collection of proofs for each point q_i
+            qs_with_proof = pop(B[l-1], d + 2)
+            qs, pss = zip(*qs_with_proof)
 
-            radon_qpoints = [l[0] for l in qpoints]
-
-            radon_pt, alphas, indicies = radon_partition(radon_qpoints)
-            pass
+            # Calculate the radon partition
+            radon_pt, alphas, partition_masks = radon_partition(qs)
 
             for k in range(2):
-                idx = indicies[k]
-                qpoints_with_proofs = qpoints[idx]
+                # qs_part denotes the list of points in this partition
+                # qs_part = list(compress(qs, partition_masks[k]))
 
+                # pss_part denotes the collection of proofs for that points
+                pss_part = list(compress(pss, partition_masks[k]))
+
+                # as_part denotes the factors of the radon point in regard to
+                # the hulls consisting of the partitions
+                as_part = alphas[k]
+
+                # Form a proof of depth 2^(l+1) for the radon point
                 for i in range(2 ** (l - 1)):
-                    # Let S_ij be the ith part of the proof for q_j
-                    # ?????
 
-                    # TODO: union proofs => proofs should be sets
+                    # Union the i'th part of each proof of each point
+                    X_alphas = []
+                    X_hulls = []
+                    for j, ps in enumerate(pss_part):
+                        S_ij = ps[i]
 
-                    # Union of all part i of the proofs.
-                    # X = [q[1][i] for q in qpoints_with_proofs]
-                    # TODO: make this a union
+                        for ppt in S_ij:
+                            # Adjust the factors of the proofs to be able to
+                            # describe the radon point as a combination of it's
+                            # proofs.
+                            alpha = as_part[j] * ppt[0]
+                            hull = ppt[1]
 
-                    # X = [ (a, s), (a, s) ...  ]
-                    X = []
-                    for j, q in enumerate(qpoints_with_proofs):
-                        # q[1][i] = [ (a, s), (a, s) ...  ]
-                        for m in q[1][i]:
-                            X.append((alphas[k][j] * m[0], m[1]))
+                            # Add them to the new proof
+                            X_alphas.append(alpha)
+                            X_hulls.append(hull)
 
-                    # radonpunkt ist nun in abhängigkeit der proofs dargestellt
-                    X2, non_hull = _prune2(X)
-                    # X2 = [ (a, s), (a,s) ...  ]
+                    # Reduce the hull of the radon point, that is consisting
+                    # of the proof parts, to d + 1 hull points.
+                    X2, non_hull = _prune_zipped(X_alphas, X_hulls)
+
                     proof.append(X2)
-
-                    for m in non_hull:
-                        B[0].append((m, [[(1, m)]]))
-
-                    pass
+                    B[0].extend(non_hull)
 
             B[l].append((radon_pt, proof))
-            pass
+
         return B[z][0][0]
 
 
@@ -86,30 +100,25 @@ def find_l(B, d):
     return l + 1
 
 
-def pop(l, n):
-    for i in range(n):
-        yield l.pop()
+def _prune_zipped(alphas, hull):
+    _alphas = np.asarray(alphas)
+    _hull = np.asarray(hull)
+    alphas, hull, non_hull = _prune_recursive(_alphas, _hull, [])
+
+    assert alphas.shape[0] == hull.shape[0]
+
+    non_hull = [(p, [[(1, p)]]) for p in non_hull]
+
+    return zip(alphas, hull), non_hull
 
 
-def _prune2(X):
-    alphas = []
-    hull = []
-    for i in X:
-        alphas.append(i[0])
-        hull.append(i[1])
-    alphas = np.asarray(alphas)
-    hull = np.asarray(hull)
-    alphas, hull, non_hull = _prune(alphas, hull)
-    assert (len(alphas) == len(hull))
-    return [(alphas[i], hull[i]) for i in range(len(hull))], non_hull
-
-
-def _prune(alphas, hull, non_hull=[]):
+def _prune_recursive(alphas, hull, non_hull):
     # Remove all coefficients that are already (close to) zero.
     idx_nonzero = ~ np.isclose(alphas, np.zeros_like(alphas))  # alphas != 0
 
+    non_hull.extend(hull[~idx_nonzero])
+
     alphas = alphas[idx_nonzero]
-    non_hull = list(hull[~idx_nonzero]) + non_hull
     hull = hull[idx_nonzero]
 
     # @see http://www.math.cornell.edu/~eranevo/homepage/ConvNote.pdf
@@ -128,8 +137,7 @@ def _prune(alphas, hull, non_hull=[]):
     lindep = _hull[1:] - _hull[1]
 
     # Solve β * lindep = 0
-    _, _, V = np.linalg.svd(lindep.T)
-    _betas = V.T[:, -1]
+    _betas = solve_homogeneous2(lindep.T)
 
     # Calculate β_1 in a way to assure Sum β_i = 0
     beta1 = np.negative(np.sum(_betas))
@@ -154,14 +162,4 @@ def _prune(alphas, hull, non_hull=[]):
     non_hull.append(hull[lambda_min_idx])
     alphas = alphas[idx]
 
-    return _prune(alphas, hull, non_hull)
-
-
-# def _convex_combination(point, hull):
-#     n, d = hull.shape
-#
-#     a = np.vstack((hull.T, np.ones(n)))
-#     b = np.hstack((point, np.ones(1)))
-#     x, residues, rank, s = np.linalg.lstsq(a,b)
-#
-#     return x
+    return _prune_recursive(alphas, hull, non_hull)

@@ -34,6 +34,15 @@ def chunks(l, n):
         yield l[i:i + n]
 
 
+def pop(l, n):
+    """
+        Yield n elements from the list l.
+        Throws IndexError if len(l) < n.
+    """
+    for i in range(n):
+        yield l.pop()
+
+
 class NumpyAwareJSONEncoder(json.JSONEncoder):
     def default(self, obj):
         if isinstance(obj, np.ndarray) and obj.ndim == 1:

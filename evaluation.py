@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+import argparse
 import csv
 import json
 import random
@@ -15,28 +16,12 @@ from centerpoints.iterated_radon import IteratedRadon
 from centerpoints.iterated_tverberg import IteratedTverberg
 
 
-# The seed can be set to reproduce results.
-seed = None
-
-# Run only the configured benchmarks (or all if None ;))
-only = None
-only = ["circle"]
-
-# Output directory (Attention: files with the same name will be overwritten)
-outputDir = path.join(path.dirname(path.realpath(__file__)), "evaluation")
-
-# Default values:
-repeat = 3
-size = 5000
-radius = 50
-
 # Initialize the algorithms
 algorithms = (
     (IteratedTverberg(), "IteratedTverberg"),
     (IteratedRadon(), "IteratedRadon"),
     (IteratedRadon(True), "IteratedRadon (w/ Trees)")
 )
-
 
 # Wrappers to generators with less parameters
 def _(gen):
@@ -47,79 +32,80 @@ def __(gen):
     return lambda n, dim, r: gen(n)
 
 
-# Benchmark cases
-benchmarks = {
-    "circle": {
-        "title": "Circle",
-        "generator": uniform_sphere_points,
-        "repeat": repeat,
-        "size": size,
-        "radius": radius,
-        "dim": 2
-    },
+# Benchmark configs
+def benchmarks(repeat=None, size=None, radius=None):
+    return {
+        "circle": {
+            "title": "Circle",
+            "generator": uniform_sphere_points,
+            "repeat": repeat,
+            "size": size,
+            "radius": radius,
+            "dim": 2
+        },
 
-    "sphere": {
-        "title": "Sphere",
-        "generator": uniform_sphere_points,
-        "repeat": repeat,
-        "size": size,
-        "radius": radius,
-        "dim": 3
-    },
+        "sphere": {
+            "title": "Sphere",
+            "generator": uniform_sphere_points,
+            "repeat": repeat,
+            "size": size,
+            "radius": radius,
+            "dim": 3
+        },
 
-    "sphere-solid": {
-        "title": "Solid Sphere",
-        "generator": uniform_sphere_points_volume,
-        "repeat": repeat,
-        "size": size,
-        "radius": radius,
-        "dim": 3
-    },
+        "sphere-solid": {
+            "title": "Solid Sphere",
+            "generator": uniform_sphere_points_volume,
+            "repeat": repeat,
+            "size": size,
+            "radius": radius,
+            "dim": 3
+        },
 
-    "sphere-10d": {
-        "title": "Sphere (10D)",
-        "generator": uniform_sphere_points,
-        "repeat": repeat,
-        "size": size,
-        "radius": radius,
-        "dim": 10
-    },
+        "sphere-10d": {
+            "title": "Sphere (10D)",
+            "generator": uniform_sphere_points,
+            "repeat": repeat,
+            "size": size,
+            "radius": radius,
+            "dim": 10
+        },
 
-    "normal-2d": {
-        "title": "Normal distribution (2D)",
-        "generator": _(normal_distributed_points),
-        "repeat": repeat,
-        "size": size,
-        "radius": None,
-        "dim": 2
-    },
+        "normal-2d": {
+            "title": "Normal distribution (2D)",
+            "generator": _(normal_distributed_points),
+            "repeat": repeat,
+            "size": size,
+            "radius": None,
+            "dim": 2
+        },
 
-    "normal-3d": {
-        "title": "Normal distribution (3D)",
-        "generator": _(normal_distributed_points),
-        "repeat": repeat,
-        "size": size,
-        "radius": None,
-        "dim": 3
-    },
+        "normal-3d": {
+            "title": "Normal distribution (3D)",
+            "generator": _(normal_distributed_points),
+            "repeat": repeat,
+            "size": size,
+            "radius": None,
+            "dim": 3
+        },
 
-    "normal-10d": {
-        "title": "Normal distribution (10D)",
-        "generator": _(normal_distributed_points),
-        "repeat": repeat,
-        "size": size,
-        "radius": None,
-        "dim": 10
-    },
+        "normal-10d": {
+            "title": "Normal distribution (10D)",
+            "generator": _(normal_distributed_points),
+            "repeat": repeat,
+            "size": size,
+            "radius": None,
+            "dim": 10
+        },
 
-    # "cube": ..
-}
+        # "cube": ..
+    }
 
 
-def run_benchmarks(benchmarks, outputDir, seed):
+def run_benchmarks(benchmarks, output_dir, seed):
 
     # Truncate results and write header
-    with open(path.join(outputDir, "results.csv"), "w") as f:
+    with open(path.join(output_dir, "results.csv"), "w") as f:
         writer = csv.writer(f)
         bench_short_result_titles = (
             "Name", "Title", "Algorithm",
@@ -130,8 +116,7 @@ def run_benchmarks(benchmarks, outputDir, seed):
         )
         writer.writerow(bench_short_result_titles)
 
-
-
+    # Run the benchmarks
     for name, config in benchmarks.items():
         # Export config
         title = config["title"]
@@ -141,6 +126,8 @@ def run_benchmarks(benchmarks, outputDir, seed):
         radius = config["radius"]
         dim = config["dim"]
 
+        print("Generating points for " + title)
+
         if seed:
             # Reset the seed to generate the same point sets
             random.seed(seed)
@@ -149,6 +136,8 @@ def run_benchmarks(benchmarks, outputDir, seed):
         points = generator(size, dim, radius)
 
         for algorithm in algorithms:
+            print("Run " + title + " with " + algorithm[1]) 
+
             # TODO: Reset seed again????
             timings, results = benchmark(algorithm[0], points, repeat)
 
@@ -187,7 +176,7 @@ def run_benchmarks(benchmarks, outputDir, seed):
 
             # Store the results as csv and json
             algoname = type(algorithm[0]).__name__
-            basename = path.join(outputDir, name + "-" + algoname)
+            basename = path.join(output_dir, name + "-" + algoname)
             # with open(baseFileName + ".csv", mode="w") as f:
             # writer = csv.writer(f)
             #     writer.writerows(zip(timings, results, distances))
@@ -203,19 +192,47 @@ def run_benchmarks(benchmarks, outputDir, seed):
             bench_short_result.extend(stats)
             bench_short_result.extend(dist_stat)
 
-            with open(path.join(outputDir, "results.csv"), "a") as f:
+            with open(path.join(output_dir, "results.csv"), "a") as f:
                 writer = csv.writer(f)
                 writer.writerow(bench_short_result)
 
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(
+        description="Run multiple centerpoint benchmarks.")
 
-            # Only run the specified benchmarks
-    if only:
+    parser.add_argument("--repeat", type=int, default=10, required=False,
+                        help="Repeat each benchmark REPEAT times.")
+    parser.add_argument("--size", type=int, default=5000, required=False,
+                        help="Generate SIZE points for each benchmark.")
+    parser.add_argument("--radius", type=int, default=50, required=False,
+                        help="Set the radius if applicable (f.ex. spheres).")
+    parser.add_argument("--seed", type=int, default=None, required=False,
+                        help="Generate random points based on this seed. "
+                             "Can be used to reproduce results.")
+    parser.add_argument("--output-dir", type=str, default=None, required=False,
+                        help="Write results to output-dir. "
+                             "Default ./evaluation .")
+    parser.add_argument("benchmarks", nargs="*",
+                        help="Benchmarks to run. "
+                             "If omitted every benchmark is run. "
+                             "Possible values: " +
+                             ", ".join(benchmarks().keys())
+    )
+
+    args = parser.parse_args()
+
+    if not args.output_dir:
+        _dirname = path.dirname(path.realpath(__file__))
+        args.output_dir = path.join(_dirname, "evaluation")
+
+    # Only run the specified benchmarks
+    _benchmarks = benchmarks(args.repeat, args.size, args.radius)
+    if args.benchmarks:
         _benchmarks = {name: config
-                       for (name, config) in benchmarks.items()
-                       if name in only}
-    else:
-        _benchmarks = benchmarks
+                       for (name, config)
+                       in _benchmarks.items()
+                       if name in args.benchmarks}
 
-    run_benchmarks(_benchmarks, outputDir, seed)
+    # Run run run!
+    run_benchmarks(_benchmarks, args.output_dir, args.seed)

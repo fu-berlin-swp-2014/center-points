@@ -5,7 +5,7 @@ import math
 import numpy as np
 
 from centerpoints.iterated_tverberg import IteratedTverberg
-from centerpoints.helpers import random_sphere_points
+from centerpoints.helpers import uniform_sphere_points
 
 
 class TestLibrary(unittest.TestCase):
@@ -15,7 +15,7 @@ class TestLibrary(unittest.TestCase):
             pass
 
     def test_tverberg(self):
-        points = random_sphere_points(50000, 3)
+        points = uniform_sphere_points(50000, 3)
 
         a = IteratedTverberg()
         cpt = a.centerpoint(points)

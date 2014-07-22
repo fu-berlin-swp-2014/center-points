@@ -4,7 +4,7 @@ import math
 import numpy as np
 
 from centerpoints.iterated_radon import IteratedRadon
-from centerpoints.helpers import random_sphere_points
+from centerpoints.helpers import uniform_sphere_points
 
 
 class TestLibrary(unittest.TestCase):
@@ -14,7 +14,7 @@ class TestLibrary(unittest.TestCase):
             pass
 
     def test_radon(self):
-        points = random_sphere_points(100, 3)
+        points = uniform_sphere_points(100, 3)
 
         cpt = IteratedRadon().centerpoint(points)
         cpt2 = IteratedRadon(True).centerpoint(points)

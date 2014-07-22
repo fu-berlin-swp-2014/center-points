@@ -43,6 +43,8 @@ class IteratedTverberg(CenterpointAlgo):
             qs_with_proof = pop(B[l-1], d + 2)
             qs, pss = zip(*qs_with_proof)
 
+            # TODO: the proof parts should be "ordered" according to the paper
+
             # Calculate the radon partition
             radon_pt, alphas, partition_masks = radon_partition(qs)
 

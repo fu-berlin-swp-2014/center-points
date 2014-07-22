@@ -23,6 +23,7 @@ algorithms = (
     (IteratedRadon(True), "IteratedRadon (w/ Trees)")
 )
 
+
 # Wrappers to generators with less parameters
 def _(gen):
     return lambda n, dim, r: gen(n, dim)
@@ -136,7 +137,7 @@ def run_benchmarks(benchmarks, output_dir, seed):
         points = generator(size, dim, radius)
 
         for algorithm in algorithms:
-            print("Run " + title + " with " + algorithm[1]) 
+            print("Run " + title + " with " + algorithm[1])
 
             # TODO: Reset seed again????
             timings, results = benchmark(algorithm[0], points, repeat)
@@ -199,6 +200,7 @@ def run_benchmarks(benchmarks, output_dir, seed):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
         description="Run multiple centerpoint benchmarks.")
 
     parser.add_argument("--repeat", type=int, default=10, required=False,

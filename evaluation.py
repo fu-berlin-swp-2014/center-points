@@ -280,13 +280,21 @@ def run_benchmarks(benchmarks, output_dir, seed):
             random.seed(seed)
             np.random.seed(seed)
 
-        points = generator(size, dim, radius)
+        try:
+            points = generator(size, dim, radius)
+        except Exception as e:
+            print("Error on generating data:", e)
+            continue
 
         for i, algorithm in enumerate(algorithms):
             print("Run " + title + " with " + algorithm[1])
 
             # TODO: Reset seed again????
-            timings, results = benchmark(algorithm[0], points, repeat)
+            try:
+                timings, results = benchmark(algorithm[0], points, repeat)
+            except Exception as e:
+                print("Error on calculating centerpoint:", e)
+                continue
 
             # Calculate the distance to 0
             distances = np.linalg.norm(results, axis=1)
@@ -322,8 +330,8 @@ def run_benchmarks(benchmarks, output_dir, seed):
             }
 
             # Store the results as csv and json
-            algoname = type(algorithm[0]).__name__
-            basename = path.join(output_dir, name + "-" + i + "-" + algoname)
+            algoname = type(algorithm[0]).__name__ + "-" + str(i)
+            basename = path.join(output_dir, name + "-" + algoname)
             # with open(baseFileName + ".csv", mode="w") as f:
             # writer = csv.writer(f)
             #     writer.writerows(zip(timings, results, distances))

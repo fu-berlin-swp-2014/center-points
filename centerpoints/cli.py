@@ -3,8 +3,10 @@ import sys
 import csv
 import json
 
-from .clarkson import ClarksonAlgo
-from .helpers import has_valid_dimension, has_valid_type
+from .iterated_radon import IteratedRadon
+from .iterated_tverberg import IteratedTverberg
+from .helpers import has_valid_dimension, has_valid_type, NumpyAwareJSONEncoder
+from .benchmark import benchmark
 
 
 def parse_arguments(argv):
@@ -20,6 +22,12 @@ def parse_arguments(argv):
     parser = argparse.ArgumentParser(
         description="Calculate approximate centerpoints in higher-dimensions.")
 
+    parser.add_argument("--benchmark", default=0, type=int,
+                        metavar="NUM",
+                        help="Run the specified centerpoint algorithm NUM "
+                             "times and return a JSON tuple "
+                             "(timings, results).")
+
     algo_group = parser.add_argument_group("Algorithms")
     algo_group_algos = algo_group.add_mutually_exclusive_group(required=True)
     algo_group_algos.add_argument("--radon", "--iterated-radon", "-1",
@@ -34,6 +42,12 @@ def parse_arguments(argv):
                                   action="store_true",
                                   help="Use the algorithm introduced by Mulzer"
                                        " and Werner.")
+
+    radon_group = parser.add_argument_group("Iterated Radon Options")
+    radon_group.add_argument("--radon-tree", action="store_true",
+                             help="Use the subexponentially dependent on d "
+                                  "Alogrithm 1.")
+    # radon_group.add_argument("--radon-tree-height" ...)
 
     parser.add_argument("points", type=argparse.FileType('r'),
                         metavar="POINTS",
@@ -104,14 +118,35 @@ def main():
     if not has_valid_type(points, float):
         raise TypeError("Invalid format for some point.")
 
-    result = None
+    algorithm = None
     if options.radon:
-        clarkson = ClarksonAlgo()
-        result = clarkson.centerpoint(points)
+        algorithm = IteratedRadon(options.radon_tree)
 
     elif options.tverberg:
-        pass
-    elif options.mulzer:
-        pass
+        algorithm = IteratedTverberg()
 
-    print(result)
+    elif options.mulzer:
+        raise NotImplementedError()
+
+    if options.benchmark > 0:
+        result = benchmark(algorithm, points, options.benchmark)
+
+        json.dump(result, sys.stdout,
+                  cls=NumpyAwareJSONEncoder,
+                  # indent=4, separators=(',', ': ')
+                  )
+        print()  # \n
+        print(result)
+    else:
+        result = algorithm.centerpoint(points)
+
+        # TODO: discuss if this is our intent?
+        if options.format == "csv":
+            writer = csv.writer(sys.stdout, delimiter=options.separator)
+            writer.writerow(result)
+
+        elif options.format == "json":
+            json.dump(result, sys.stdout,
+                      # indent=4, separators=(',', ': ')
+                      )
+            print()  # \n

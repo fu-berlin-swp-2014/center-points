@@ -164,7 +164,7 @@ class VisualisationController(QtGui.QMainWindow):
     def __init__(self, data=None, data_name="Data Points", n_data=1000,
                  dim_data=3, data_func=None, algorithm=None, parent=None):
         QtGui.QMainWindow.__init__(self, parent)
-        import centerpoints.clarkson
+        import centerpoints.iterated_radon
 
         # _visualisation and _central_widget will be set in
         # update_visualisation()
@@ -185,14 +185,14 @@ class VisualisationController(QtGui.QMainWindow):
             self._data = self._data_func(self.n_data, self.dim_data)
 
         if algorithm is None:
-            algorithm = centerpoints.clarkson.ClarksonAlgo()
+            algorithm = centerpoints.iterated_radon.IteratedRadon()
         self._algorithm = algorithm
 
         # Setup Gui
         self._algo_menu = QtGui.QMenu("Algorithms", self)
         algorithms = {
             # Add new algorithms here
-            "Iterated Radon": centerpoints.clarkson.ClarksonAlgo()
+            "Iterated Radon": centerpoints.iterated_radon.IteratedRadon()
         }
         for name, cls in algorithms.items():
             action = self._algo_menu.addAction(name)

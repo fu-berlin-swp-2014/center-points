@@ -6,13 +6,13 @@ from centerpoints.cli import parse_arguments
 
 class TestArgumentParser(unittest.TestCase):
     @classmethod
-    def setUpClass(self):
-        self.ptsf = NamedTemporaryFile()
+    def setUpClass(cls):
+        cls.ptsf = NamedTemporaryFile()
 
     @classmethod
-    def tearDownClass(self):
-        self.ptsf.truncate()
-        self.ptsf.close()
+    def tearDownClass(cls):
+        cls.ptsf.truncate()
+        cls.ptsf.close()
 
     def test_algorithm_choice(self):
         self.assertRaises(SystemExit, parse_arguments, ["-1", "-2"])

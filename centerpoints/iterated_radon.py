@@ -1,17 +1,23 @@
 from math import log, ceil
 
+import numpy as np
+
 from .interfaces import CenterpointAlgo
 from .helpers import chunks
 from .lib import radon_point, sample_with_replacement, radon_partition
-import centerpoints.visualise.visualise as vis
 
 
-class ClarksonAlgo(CenterpointAlgo):
-    def __init__(self):
-        pass
+class IteratedRadon(CenterpointAlgo):
+    def __init__(self, use_tree=False):
+        self._use_tree = use_tree
 
-    # algo1
     def centerpoint(self, points):
+        if self._use_tree:
+            return self._algo1(points)
+        else:
+            return self._algo4(points)
+
+    def _algo1(self, points):
         dim = len(points[0])
         # TODO: check L size and required number of points.
         L = (dim + 2) ** 4
@@ -23,6 +29,7 @@ class ClarksonAlgo(CenterpointAlgo):
         return nodes[0]
 
     def visualisation(self, points, v):
+        import centerpoints.visualise.visualise as vis
         dim = len(points[0])
         # TODO: check L size and required number of points.
         L = (dim + 2) ** 4
@@ -36,18 +43,19 @@ class ClarksonAlgo(CenterpointAlgo):
             new_nodes = []
             color = colorgroup.next_member()
             for chunk in chunks(nodes, dim + 2):
-
-                (smaller, bigger), radon_pt, _ = radon_partition(chunk)
-                v.add(vis.RadonPartition(smaller, bigger, radon_pt, color))
+                print(type(chunk))
+                radon_pt, _, (mask_I, mask_J) = radon_partition(chunk)
+                v.add(vis.RadonPartition(chunk[mask_I, :], chunk[mask_J, :],
+                                         radon_pt, color))
                 new_nodes.append(radon_pt)
             i += 1
-            nodes = new_nodes
+            nodes = np.asarray(new_nodes)
 
         v.next("Approximated Centerpoint")
         v.point(nodes[0], (1, 1, 1, 1), 5)
         return nodes[0]
 
-    def algo4(self, points):
+    def _algo4(self, points):
         dim = len(points[0])
         n = len(points)
 

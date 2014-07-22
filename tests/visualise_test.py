@@ -1,13 +1,11 @@
 import math
 import unittest
-import sys
+
 import numpy as np
 from PySide import QtGui
 
-from centerpoints.clarkson import ClarksonAlgo
 from centerpoints.visualise.visualise \
     import Visualisation, Polygons, Points, PointGroups, Gui
-import pyglet
 
 
 def random_sphere_points(n_points, dim):

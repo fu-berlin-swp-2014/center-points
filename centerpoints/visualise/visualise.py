@@ -204,9 +204,10 @@ class VisualisationController(QtGui.QMainWindow):
 
         self._data_menu = QtGui.QMenu("Data Sets", self)
         data_sets = {
-            "Cube Volume": centerpoints.data_set.sphere_volume,
+            "Cube Volume": centerpoints.data_set.cube,
+            "Cube Surface": centerpoints.data_set.cube_surface,
             "Normal Distribution": centerpoints.data_set.normal_distribution,
-            "Sphere Surface": centerpoints.data_set.sphere_volume,
+            "Sphere Surface": centerpoints.data_set.sphere_surface,
             "Sphere Volume": centerpoints.data_set.sphere_volume,
         }
         for name, func in sorted(data_sets.items()):

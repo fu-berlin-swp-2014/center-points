@@ -22,18 +22,17 @@ class ClarksonAlgo(CenterpointAlgo):
 
         return nodes[0]
 
-    def visualisation(self, points):
+    def visualisation(self, points, v):
         dim = len(points[0])
         # TODO: check L size and required number of points.
         L = (dim + 2) ** 4
-        v = vis.Visualisation()
         nodes = sample_with_replacement(points, L)
-        v.axis_factor = 30
-        v.points(points, (0.5, 0.5, 0.5, 0.8))
         v.points(nodes, (1, 0.5, 0, 1))
         colorgroup = vis.ColorGroup()
 
+        i = 0
         while len(nodes) != 1:
+            v.next("Iteration #" + str(i))
             new_nodes = []
             color = colorgroup.next_member()
             for chunk in chunks(nodes, dim + 2):
@@ -41,12 +40,12 @@ class ClarksonAlgo(CenterpointAlgo):
                 (smaller, bigger), radon_pt, _ = radon_partition(chunk)
                 v.add(vis.RadonPartition(smaller, bigger, radon_pt, color))
                 new_nodes.append(radon_pt)
-            v.next_step()
+            i += 1
             nodes = new_nodes
-        v.point(nodes[0], (1, 1, 1, 1), 5)
-        v.show()
-        return nodes[0]
 
+        v.next("Approximated Centerpoint")
+        v.point(nodes[0], (1, 1, 1, 1), 5)
+        return nodes[0]
 
     def algo4(self, points):
         dim = len(points[0])

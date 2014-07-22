@@ -5,32 +5,13 @@ import sys
 from PySide import QtGui, QtOpenGL, QtCore
 from PySide.QtCore import QTimer, SIGNAL
 from PySide.QtGui import QLabel
+import copy
 import numpy as np
 
-import OpenGL
 from OpenGL.GL import *
 from OpenGL.GLU import *
 
-
-
-def playground():
-    """ Draw something here, like a white X.
-    glColor4f(1, 1, 1, 1)
-    glBegin(GL_LINES)
-    glVertex3f(0, 0, 0)
-    glVertex3f(640, 480, 0)
-
-    glVertex3f(0, 0, 0)
-    glVertex3f(640, -480, 0)
-
-    glVertex3f(0, 480, 0)
-    glVertex3f(640, 0, 0)
-    glEnd()
-
-    glBegin(GL_POINTS)
-    glVertex3f(100, 100, 100)
-    glEnd()
-    """
+import centerpoints.data_set
 
 
 class Color:
@@ -70,16 +51,8 @@ class Color:
 
 
 class Camera(object):
-    KEY_FARER = [QtCore.Qt.Key_W, QtCore.Qt.Key_Plus]
-    KEY_NEARER = [QtCore.Qt.Key_S, QtCore.Qt.Key_Minus]
-
-    KEY_DOWN_ROTATE = [QtCore.Qt.Key_Down]
-    KEY_TOP_ROTATE = [QtCore.Qt.Key_Up]
-    KEY_LEFT_ROTATE = [QtCore.Qt.Key_Left]
-    KEY_RIGHT_ROTATE = [QtCore.Qt.Key_Right]
-
-    PROJECTIVE = 2
-    ISOMETRIC = 1
+    ISOMETRIC = 0
+    PROJECTIVE = 1
 
     MODES = [ISOMETRIC, PROJECTIVE]
 
@@ -137,8 +110,6 @@ class Camera(object):
     def apply(self):
         """ Apply camera transformation. """
         glLoadIdentity()
-        if self.mode == 1:
-            return
         glTranslatef(-self.x, -self.y, -self.z)
         glRotatef(self.rotx, 1, 0, 0)
         glRotatef(self.roty, 0, 1, 0)
@@ -189,23 +160,109 @@ def numpy2polygons(polygons):
     return np.array([numpy2polygon(p) for p in polygons], dtype=np.float32)
 
 
-class VisualisationWindow(QtGui.QMainWindow):
-    def __init__(self, visual_render, parent=None):
+class VisualisationController(QtGui.QMainWindow):
+    def __init__(self, data=None, data_name="Data Points", n_data=1000,
+                 dim_data=3, data_func=None, algorithm=None, parent=None):
         QtGui.QMainWindow.__init__(self, parent)
+        import centerpoints.clarkson
 
-        self.refreshed = False
-        self._visual_render = visual_render
+        # _visualisation and _central_widget will be set in
+        # update_visualisation()
+        self._visualisation = None
+        self._central_widget = None
+        self.n_data = n_data
+        self.dim_data = dim_data
+        self._data_name = "Data Points"
+        self._scale_factor = 100
+        if data is not None:
+            self._data = data
+        else:
+            if data_func is None:
+                data_func = centerpoints.data_set.sphere_volume
+                self._data_name = "Sphere Volume"
+            self._data_func = data_func
 
-        self._glWidget = GLWidget()
-        self._glWidget.draw = visual_render.draw
+            self._data = self._data_func(self.n_data, self.dim_data)
+
+        if algorithm is None:
+            algorithm = centerpoints.clarkson.ClarksonAlgo()
+        self._algorithm = algorithm
+
+        # Setup Gui
+        self._algo_menu = QtGui.QMenu("Algorithms", self)
+        algorithms = {
+            # Add new algorithms here
+            "Iterated Radon": centerpoints.clarkson.ClarksonAlgo()
+        }
+        for name, cls in algorithms.items():
+            action = self._algo_menu.addAction(name)
+            action.triggered.connect(
+                lambda c=cls: self.set_algorithm(c)
+            )
+
+        self.menuBar().addMenu(self._algo_menu)
+
+        self._data_menu = QtGui.QMenu("Data Sets", self)
+        data_sets = {
+            "Cube Volume": centerpoints.data_set.sphere_volume,
+            "Normal Distribution": centerpoints.data_set.normal_distribution,
+            "Sphere Surface": centerpoints.data_set.sphere_volume,
+            "Sphere Volume": centerpoints.data_set.sphere_volume,
+        }
+        for name, func in sorted(data_sets.items()):
+            self._data_menu.addAction(name).triggered.connect(
+                lambda n=name, f=func: self.set_data_func(n, f)
+            )
+
+        self.menuBar().addMenu(self._data_menu)
+        self.update_visualisation()
+        self.setWindowTitle(self.tr("Centerpoints"))
+
+    def set_data(self, name, data):
+        self._data_name = name
+        self._data = data
+        self.update_visualisation()
+
+    def set_algorithm(self, algo_class):
+        self._algorithm = algo_class
+        self.update_visualisation()
+
+    def set_data_func(self, name, data_func):
+        print(name)
+        self._data_name = name
+        self._data_func = data_func
+        self.update_visualisation()
+
+    def update_visualisation(self):
+        if self._data_func is not None:
+            self._data = \
+                self._scale_factor * self._data_func(self.n_data, self.dim_data)
+
+        self._visualisation = Visualisation(
+            start_step=Step(description=self._data_name))
+        self._visualisation.points(self._data, (0.5, 0.5, 0.5, 0.5))
+        self._algorithm.visualisation(self._data,
+                                      self._visualisation)
+
+        if self._central_widget is not None:
+            self._central_widget.deleteLater()
+        self._central_widget = VisualisationWidget(
+            self._visualisation, parent=self)
+
+        self.setCentralWidget(self._central_widget)
+
+
+class VisualisationWidget(QtGui.QWidget):
+    def __init__(self, visualisation, parent=None):
+        QtGui.QWidget.__init__(self, parent)
+
+        self._visualisation = visualisation
+        self._glWidget = GLWidget(visualisation)
         self._stepsList = QtGui.QListWidget()
         self._stepsList.setMaximumWidth(200)
         self._stepsList.setSelectionMode(QtGui.QAbstractItemView.MultiSelection)
 
-        for i, s in enumerate(self._visual_render._visualisation._steps):
-            if s.description is None or s.description == "":
-                s.description = "Step: " + str(i)
-            # w = s.qtwidget()
+        for i, s in enumerate(self._visualisation._steps):
             self._stepsList.addItem(s.description)
 
         self._mainLayout = QtGui.QHBoxLayout()
@@ -217,13 +274,13 @@ class VisualisationWindow(QtGui.QMainWindow):
         self._animate_btn = QtGui.QPushButton("Animate")
         self._animate_btn.setCheckable(True)
         self._animate_btn.clicked.connect(
-            lambda: self._visual_render.toggle_animation())
+            lambda: self._glWidget.toggle_animation())
 
         self._optionLayout.addWidget(self._animate_btn)
 
         self._animate_slider = QtGui.QSlider(QtCore.Qt.Horizontal)
         self._animate_slider.valueChanged.connect(
-            lambda s: self._visual_render.set_animation_speed((100 - s) / 10))
+            lambda s: self._glWidget.set_animation_speed((100 - s) / 10))
 
         self._optionLayout.addWidget(QLabel("Animation Speed:"))
         self._optionLayout.addWidget(self._animate_slider)
@@ -231,7 +288,7 @@ class VisualisationWindow(QtGui.QMainWindow):
         self._show_axis_btn = QtGui.QPushButton("Show Coordinate System")
         self._show_axis_btn.setCheckable(True)
         self._show_axis_btn.clicked.connect(
-            self._visual_render.toggle_axis)
+            self._glWidget.toggle_axis)
         self._optionLayout.addWidget(self._show_axis_btn)
 
         self._glOptionLayout.addLayout(self._optionLayout)
@@ -243,43 +300,46 @@ class VisualisationWindow(QtGui.QMainWindow):
         self._stepsList.connect(SIGNAL("itemSelectionChanged()"),
                                 self.changedSelection)
 
-        self.menu = QtGui.QMenu("Algorithm", self)
-        self.menuBar().addMenu(self.menu)
+        self.setLayout(self._mainLayout)
 
-        central_widget = QtGui.QWidget()
-        central_widget.setLayout(self._mainLayout)
-        self.setCentralWidget(central_widget)
-        self.setWindowTitle(self.tr("Hello GL"))
-
-    def select_algorithm(self):
-        pass
-
-    def select_training_data(self):
-        pass
-
-    def select_file(self):
-        pass
 
     def changedSelection(self):
         indexes = [i.row() for i in self._stepsList.selectedIndexes()]
-        steps = self._visual_render._visualisation._steps
+        steps = self._visualisation._steps
         for i in range(len(steps)):
             steps[i].selected = i in indexes
 
 
 class GLWidget(QtOpenGL.QGLWidget):
-    def __init__(self, parent=None, cam=None, fps=30):
+    KEY_DOWN_ROTATE = [QtCore.Qt.Key_Down]
+    KEY_TOP_ROTATE = [QtCore.Qt.Key_Up]
+    KEY_LEFT_ROTATE = [QtCore.Qt.Key_Left]
+    KEY_RIGHT_ROTATE = [QtCore.Qt.Key_Right]
+    KEY_FARER = [QtCore.Qt.Key_W, QtCore.Qt.Key_Plus]
+    KEY_NEARER = [QtCore.Qt.Key_S, QtCore.Qt.Key_Minus]
+
+    def __init__(self, visualisation, parent=None, cam=None, fps=30):
         QtOpenGL.QGLWidget.__init__(self, parent)
         if cam is None:
             cam = Camera()
 
+        self._visualisation = visualisation
+
+        self.steps_delay = 1
+        self.axis_factor = 50
+        self._start_time = time.time()
+        self.animation_speed = 1
+        self.animation = False
+        self.show_axis = True
+
         self.cam = cam
         self.initOpenGL()
-        self.lastPos = QtCore.QPoint()
+        self.last_mouse_pos = QtCore.QPoint()
         self.timer = QTimer()
         self.connect(self.timer, SIGNAL("timeout()"), self.updateGL)
         self.timer.start()
         self.timer.setInterval(1000 / fps)
+        self.setFocusPolicy(QtCore.Qt.ClickFocus)
 
     def initOpenGL(self):
         """ Initial OpenGL configuration. """
@@ -290,7 +350,7 @@ class GLWidget(QtOpenGL.QGLWidget):
     def paintGL(self):
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
         self.cam.apply()
-        self.draw()
+        self._draw_visualisation()
 
     def repaint(self, *args, **kwargs):
         self.paintGL()
@@ -299,11 +359,11 @@ class GLWidget(QtOpenGL.QGLWidget):
         self.cam.set_size(width, height)
 
     def mousePressEvent(self, event):
-        self.lastPos = QtCore.QPoint(event.pos())
+        self.last_mouse_pos = QtCore.QPoint(event.pos())
 
     def mouseMoveEvent(self, event):
-        dx = event.x() - self.lastPos.x()
-        dy = event.y() - self.lastPos.y()
+        dx = event.x() - self.last_mouse_pos.x()
+        dy = event.y() - self.last_mouse_pos.y()
         if event.buttons() & QtCore.Qt.LeftButton:
             self.cam.rotx += dy
             self.cam.roty += dx
@@ -311,57 +371,45 @@ class GLWidget(QtOpenGL.QGLWidget):
             self.cam.rotx += 8 * dy
             self.cam.roty += 8 * dx
 
-        self.lastPos = QtCore.QPoint(event.pos())
+        self.last_mouse_pos = QtCore.QPoint(event.pos())
 
     def keyPressEvent(self, event):
-        bottons = event.buttons()
-
-        if bottons & QtCore.Qt.KEY_P:
+        # TODO: refactor
+        key = event.key()
+        print(key)
+        print()
+        delta = 10
+        if key == QtCore.Qt.Key_P:
             self.cam.perspective()
-        elif bottons & QtCore.Qt.KEY_I:
-            self.isometric()
-        elif self.cam.mode == self.PROJECTIVE \
-                and self._is_in(bottons, self.KEY_FARER):
-            self.cam.fov -= 3
-            self.cam.update_projection()
-        elif self.cam.mode == self.PROJECTIVE \
-                and self._is_in(bottons, self.KEY_NEARER):
-            self.cam.fov += 3
-            self.cam.perspective()
-        elif self._is_in(bottons, self.KEY_LEFT_ROTATE):
-            self.roty -= 4.
-        elif self._is_in(bottons, self.KEY_RIGHT_ROTATE):
-            self.roty += 4.
-        elif self._is_in(bottons, self.KEY_TOP_ROTATE):
-            self.rotx += 4
-        elif self._is_in(bottons, self.KEY_DOWN_ROTATE):
-            self.rotx -= 4
+        elif key == QtCore.Qt.Key_I:
+            self.cam.isometric()
+        elif key == QtCore.Qt.Key_W:
+            self.cam.z -= delta
+        elif key == QtCore.Qt.Key_S:
+            self.cam.z += delta
+        elif key == QtCore.Qt.Key_A:
+            self.cam.x -= delta
+        elif key == QtCore.Qt.Key_D:
+            self.cam.x += delta
+        elif self._is_in(key, self.KEY_LEFT_ROTATE):
+            self.cam.roty -= 4.
+        elif self._is_in(key, self.KEY_RIGHT_ROTATE):
+            self.cam.roty += 4.
+        elif self._is_in(key, self.KEY_TOP_ROTATE):
+            self.cam.rotx += 4
+        elif self._is_in(key, self.KEY_DOWN_ROTATE):
+            self.cam.rotx -= 4
 
     @staticmethod
     def _is_in(buttons, keys):
         for k in keys:
-            if buttons & k:
+            if buttons == k:
                 return True
         return False
 
 
-class VisualRender:
-    def __init__(self, visualisation):
-        self._visualisation = visualisation
-        self.steps_delay = 1
-        self.axis_factor = 50
-        self._start_time = time.time()
-        self.animation_speed = 1
-        self.animation = False
-        self.show_axis = True
-
-    def show(self):
-        window = VisualisationWindow(self)
-        window.show()
-
     def set_animation_speed(self, speed):
         " set speed between 0 and 100, where 10 is equals to a second"
-        print(speed)
         self.animation_speed = speed / 10
 
     def toggle_axis(self):
@@ -393,18 +441,17 @@ class VisualRender:
         draw_vertex_array(vertices, colors, GL_QUADS)
         glDisable(GL_DEPTH_TEST)
 
-    def draw(self):
+    def _draw_visualisation(self):
         if self.show_axis:
             self.draw_axis()
 
         selected_steps = [s for s in self._visualisation._steps if s.selected]
         n = len(selected_steps)
         if self.animation:
-            n_visible = (time.time() % (n*self.animation_speed)) \
+            n_visible = (time.time() % ((n+2)*self.animation_speed)) \
                         / self.animation_speed - 1
         else:
             n_visible = n
-        print(n_visible)
         for i, s in enumerate(selected_steps):
             if i < n_visible:
                 s.draw()
@@ -420,10 +467,10 @@ class VisualRender:
 
 
 class Visualisation():
-    def __init__(self):
-        self.display_axis = True
-        self.app = QtGui.QApplication(sys.argv)
-        self._current_step = Step()
+    def __init__(self, start_step=None):
+        if start_step is None:
+            start_step = Step()
+        self._current_step = start_step
         self._steps = [self._current_step]
 
     def add(self, elem):
@@ -440,16 +487,21 @@ class Visualisation():
             points = np.vstack((points, points[-1, :]))
         self.add(Polygons(np.array([points]), color))
 
-    def next_step(self, step=None):
-        if step is None:
-            step = Step()
-
+    def next_step(self, step):
         self._current_step = step
         self._steps.append(step)
 
+    def next(self, description):
+        self._current_step = Step(description)
+        self._steps.append(self._current_step)
+
     def show(self):
-        VisualRender(self).show()
-        self.app.exec_()
+        app = QtCore.QCoreApplication.instance()
+        if app is None:
+            app = QtGui.QApplication(sys.argv)
+        widget = VisualisationWidget(self)
+        widget.show()
+        app.exec_()
 
 
 class ColorGroup:
@@ -493,7 +545,6 @@ class Step:
 
     def qtwidget(self):
         return QLabel(self.description)
-
 
 
 class AnimationStep(object):
@@ -591,3 +642,11 @@ class Points(AnimationStep):
         draw_vertex_array(gl_array(self._points.flatten().tolist()),
                           self._colors, GL_POINTS)
         glPointSize(1)
+
+
+class Gui:
+    def __init__(self):
+        self.app = QtGui.QApplication(sys.argv)
+        window = VisualisationController()
+        window.show()
+

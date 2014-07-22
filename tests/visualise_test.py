@@ -6,7 +6,7 @@ from PySide import QtGui
 
 from centerpoints.clarkson import ClarksonAlgo
 from centerpoints.visualise.visualise \
-    import Visualisation, Polygons, Points, PointGroups
+    import Visualisation, Polygons, Points, PointGroups, Gui
 import pyglet
 
 
@@ -37,6 +37,8 @@ class TestVisualisation(unittest.TestCase):
         colors[:, 3] = np.ones((n_points, ))
         colors.astype(np.float32)
         vis.add(Points(points, colors))
+        # uncomment to show the visualisation
+        # vis.show()
 
     def test_polygons(self):
         vis = Visualisation()
@@ -50,7 +52,8 @@ class TestVisualisation(unittest.TestCase):
         ]]) * 100 + 100, (1, 0, 0, 1))
         vis.add(polygons)
         vis.draw_axes = True
-        vis.show()
+        # uncomment to show the visualisation
+        # vis.show()
 
     def test_pointgroups(self):
         group = PointGroups()
@@ -64,8 +67,10 @@ class TestVisualisation(unittest.TestCase):
 
         vis = Visualisation()
         vis.add(group)
-        # pyglet.app.run()
+        # uncomment to show the visualisation
+        # vis.show()
 
-    def test_clarkson_visualisation(self):
-        clarkson = ClarksonAlgo()
-        clarkson.visualisation(random_sphere_points(5000, 3) * 200)
+    def test_visualisation_gui(self):
+        gui = Gui()
+        # uncomment to show the window
+        # gui.app.exec_()

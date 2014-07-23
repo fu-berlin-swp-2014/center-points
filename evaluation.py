@@ -66,8 +66,17 @@ def benchmarks(repeat=None, size=None, radius=None):
         },
 
         "sphere-5d": {
-            "title": "Sphere Surface 5D b",
+            "title": "Sphere Surface (5D)",
             "generator": uniform_sphere_points,
+            "repeat": repeat,
+            "size": size,
+            "radius": radius,
+            "dim": 5
+        },
+
+        "sphere-5d-solid": {
+            "title": "Solid Sphere (5D)",
+            "generator": uniform_sphere_points_volume,
             "repeat": repeat,
             "size": size,
             "radius": radius,
@@ -77,6 +86,15 @@ def benchmarks(repeat=None, size=None, radius=None):
         "sphere-10d": {
             "title": "Sphere (10D)",
             "generator": uniform_sphere_points,
+            "repeat": repeat,
+            "size": 15000,
+            "radius": radius,
+            "dim": 10
+        },
+
+        "sphere-10d-solid": {
+            "title": "Solid Sphere (10D)",
+            "generator": uniform_sphere_points_volume,
             "repeat": repeat,
             "size": 15000,
             "radius": radius,
@@ -174,23 +192,23 @@ def benchmarks(repeat=None, size=None, radius=None):
             "dim": 5
         },
 
-        "sphere-surface-10d": {
-            "title": "Sphere Surface 10D b",
-            "generator": _(sphere_surface),
-            "repeat": repeat,
-            "size": 15000,
-            "radius": 1,
-            "dim": 10
-        },
-
-        "sphere-volume-10d": {
-            "title": "Solid Volume 10D b",
-            "generator": _(sphere_volume),
-            "repeat": repeat,
-            "size": 15000,
-            "radius": 1,
-            "dim": 10
-        },
+        # "sphere-surface-10d": {
+        #     "title": "Sphere Surface 10D b",
+        #     "generator": _(sphere_surface),
+        #     "repeat": repeat,
+        #     "size": 15000,
+        #     "radius": 1,
+        #     "dim": 10
+        # },
+        #
+        # "sphere-volume-10d": {
+        #     "title": "Solid Volume 10D b",
+        #     "generator": _(sphere_volume),
+        #     "repeat": repeat,
+        #     "size": 15000,
+        #     "radius": 1,
+        #     "dim": 10
+        # },
 
         "square-surface": {
             "title": "Square Surface b",

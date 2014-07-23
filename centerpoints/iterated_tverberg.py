@@ -17,7 +17,7 @@ class IteratedTverberg(CenterpointAlgo):
         n, d = points.shape
 
         # The loop terminates when a point is in the bucket B_z
-        z = int(ceil(log(ceil(n / (2 * ((d + 1) ** 2))))))
+        z = int(log(ceil(n / (2 * ((d + 1) ** 2)))))
 
         # Initialize empty stacks / buckets
         B = [[] for l in range(z+1)]

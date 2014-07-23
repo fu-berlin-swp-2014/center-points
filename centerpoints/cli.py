@@ -136,7 +136,7 @@ def main():
                   # indent=4, separators=(',', ': ')
                   )
         print()  # \n
-        print(result)
+
     else:
         result = algorithm.centerpoint(points)
 

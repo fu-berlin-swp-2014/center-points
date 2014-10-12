@@ -1,6 +1,6 @@
 #! /usr/bin/env bash
 
-CONDA_PACKETS='numpy|scipy|matplotlib|ipython|ipython-notebook|Pygments|Sphinx|docutils'
+CONDA_PACKETS='numpy|scipy|matplotlib|ipython|ipython-notebook|Pygments|Sphinx|docutils|pandas'
 CONDA_DEPS=$(grep -E $CONDA_PACKETS  requirements.txt | sed 's/==/=/')
 PIP_DEPS=$(grep -vE $CONDA_PACKETS requirements.txt )
 TRAVIS_PYTHON_VERSION=3.4

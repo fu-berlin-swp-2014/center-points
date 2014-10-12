@@ -6,6 +6,8 @@ import random
 from os import path
 
 import numpy as np
+import scipy.stats
+
 
 from centerpoints.benchmark import benchmark
 from centerpoints.data_set import sphere_surface, sphere_volume, cube, \
@@ -35,20 +37,37 @@ def __(gen):
     return lambda n, dim, r: gen(n)
 
 
-# Benchmark configs
-def benchmarks(repeat=None, size=None, radius=None):
-    return {
-        "circle": {
-            "title": "Circle",
-            "generator": uniform_sphere_points,
+dim_benchmark_gens = {
+    "sphere": uniform_sphere_points,
+    "normal": _(normal_distributed_points),
+    "sphere-solid": uniform_sphere_points_volume,
+}
+
+
+def dim_benchmarks(gens, repeat=None, size=None, radius=None, dim=None):
+    benchmarks = {}
+
+    for name, gen in gens.items():
+        benchmark_name = "{0}-{1}d".format(name, dim)
+        benchmark = {
+            "title": benchmark_name,
+            "generator": gen,
             "repeat": repeat,
             "size": size,
             "radius": radius,
-            "dim": 2
-        },
+            "dim": dim
+        }
 
+        benchmarks[benchmark_name] = benchmark
+
+    return benchmarks
+
+
+# Benchmark configs
+def benchmarks(repeat=None, size=None, radius=None):
+    return {
         "sphere": {
-            "title": "Sphere",
+            "title": "Sphere Surface",
             "generator": uniform_sphere_points,
             "repeat": repeat,
             "size": size,
@@ -270,16 +289,18 @@ def benchmarks(repeat=None, size=None, radius=None):
 def run_benchmarks(benchmarks, output_dir, seed):
 
     # Truncate results and write header
-    with open(path.join(output_dir, "results.csv"), "w") as f:
-        writer = csv.writer(f)
-        bench_short_result_titles = (
-            "Name", "Title", "Algorithm",
-            "Repeat", "Size", "Radius", "Dimension",
-            "Min time", "Max time", "Mean time", "Median time",
-            "Min distance", "Max distance",
-            "Mean distance", "Median distance"
-        )
-        writer.writerow(bench_short_result_titles)
+    csv_file = open(path.join(output_dir, "results.csv"), "w")
+    csv_writer = csv.writer(csv_file)
+    bench_short_result_titles = (
+        "Name", "Title", "Algorithm",
+        "Repeat", "Size", "Radius", "Dimension",
+        "min time", "max time", "mean time", "median time",
+        "std time", "sem time",
+        "min distance", "max distance",
+        "mean distance", "median distance",
+        "std distance", "sem distance"
+    )
+    csv_writer.writerow(bench_short_result_titles)
 
     # Run the benchmarks
     for name, config in benchmarks.items():
@@ -302,6 +323,8 @@ def run_benchmarks(benchmarks, output_dir, seed):
             points = generator(size, dim, radius)
         except Exception as e:
             print("Error on generating data:", e)
+            import traceback
+            traceback.print_exc()
             continue
 
         for i, algorithm in enumerate(algorithms):
@@ -312,6 +335,8 @@ def run_benchmarks(benchmarks, output_dir, seed):
                 timings, results = benchmark(algorithm[0], points, repeat)
             except Exception as e:
                 print("Error on calculating centerpoint:", e)
+                import traceback
+                traceback.print_exc()
                 continue
 
             # Calculate the distance to 0
@@ -319,19 +344,24 @@ def run_benchmarks(benchmarks, output_dir, seed):
 
             # Calculate stats about the min, max and average
             _timings = np.asarray(timings)
-            stats = (
-                np.amin(_timings),
-                np.max(_timings),
-                np.mean(_timings),
-                np.median(_timings)
-            )
+            timings_stats = {
+                "min": np.amin(_timings),
+                "max": np.max(_timings),
+                "mean": np.mean(_timings),
+                "median": np.median(_timings),
+                "std": np.std(_timings),
+                "sem": scipy.stats.sem(_timings)
+            }
 
-            dist_stat = (
-                np.amin(distances),
-                np.max(distances),
-                np.mean(distances),
-                np.median(distances)
-            )
+            distances_stats = {
+                "min": np.amin(distances),
+                "max": np.max(distances),
+                "mean": np.mean(distances),
+                "median": np.median(distances),
+                "std": np.std(distances),
+                "sem": scipy.stats.sem(distances)
+            }
+
 
             _config = config.copy()
             del _config['generator']
@@ -342,8 +372,10 @@ def run_benchmarks(benchmarks, output_dir, seed):
                 "timings": timings,
                 "results": results,
                 "distances": distances,
-                "dist_stat": dist_stat,
-                "stats": stats,
+                "stats": {
+                    'timings': timings_stats,
+                    'distances': distances_stats
+                },
                 "seed": seed
             }
 
@@ -362,12 +394,20 @@ def run_benchmarks(benchmarks, output_dir, seed):
             # Write a short summary to the combined results.
             bench_short_result = [name, title, algorithm[1],
                                   repeat, size, radius, dim]
-            bench_short_result.extend(stats)
-            bench_short_result.extend(dist_stat)
+            bench_short_result.extend(timings_stats.values())
+            bench_short_result.extend(distances_stats.values())
 
-            with open(path.join(output_dir, "results.csv"), "a") as f:
-                writer = csv.writer(f)
-                writer.writerow(bench_short_result)
+            csv_writer.writerow(bench_short_result)
+            csv_file.flush()
+
+    csv_file.close()
+
+
+def IntListType(argstr):
+    if type(argstr) is None:
+        return None
+
+    return map(int, argstr.split(","))
 
 
 if __name__ == "__main__":
@@ -382,6 +422,8 @@ if __name__ == "__main__":
                              "a fixed size.")
     parser.add_argument("--radius", type=int, default=50, required=False,
                         help="Set the radius if applicable (f.ex. spheres).")
+    parser.add_argument("--dimensions", type=IntListType, default=None, required=False,
+                        help="Use special dimensions case... to be documented.")
     parser.add_argument("--seed", type=int, default=None, required=False,
                         help="Generate random points based on this seed. "
                              "Can be used to reproduce results.")
@@ -402,12 +444,24 @@ if __name__ == "__main__":
         args.output_dir = path.join(_dirname, "evaluation")
 
     # Only run the specified benchmarks
-    _benchmarks = benchmarks(args.repeat, args.size, args.radius)
-    if args.benchmarks:
-        _benchmarks = {name: config
-                       for (name, config)
-                       in _benchmarks.items()
-                       if name in args.benchmarks}
+    if args.dimensions:
+        _gens = {name: gen
+                 for (name, gen)
+                 in dim_benchmark_gens.items()
+                 if not args.benchmarks or name in args.benchmarks}
+
+        _benchmarks = {}
+        for dim in args.dimensions:
+            _dim_benchmarks = dim_benchmarks(_gens, args.repeat, args.size, args.radius, dim)
+            _benchmarks.update(_dim_benchmarks)
+
+    else:
+        _benchmarks = benchmarks(args.repeat, args.size, args.radius)
+        if args.benchmarks:
+            _benchmarks = {name: config
+                           for (name, config)
+                           in _benchmarks.items()
+                           if name in args.benchmarks}
 
     # Run run run!
     run_benchmarks(_benchmarks, args.output_dir, args.seed)

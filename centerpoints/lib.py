@@ -36,7 +36,7 @@ def radon_partition(points):
     """
     _points = np.asarray(points)
     n, d = _points.shape
-    assert n >= d + 2
+    assert (n >= d + 2), "Not enough points"
 
     alphas = _find_alphas(_points)
 
@@ -89,7 +89,7 @@ def solve_homogeneous(M):
     """
     Return a vector x, that satisfies `M*x = 0`
     """
-    assert(isinstance(M, np.ndarray))
+    assert (isinstance(M, np.ndarray)), "ndarray required"
     # From: http://campar.in.tum.de/twiki/pub/Chair/
     # TeachingWs05ComputerVision/3DCV_svd_000.pdf
     u, s, vh = np.linalg.svd(M)

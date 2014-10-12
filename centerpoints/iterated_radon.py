@@ -59,7 +59,7 @@ class IteratedRadon(CenterpointAlgo):
         dim = len(points[0])
         n = len(points)
 
-        assert (n >= dim ** 4 + log(log(n)))
+        assert (n >= dim ** 4 + log(log(n))), "Not enough points"
 
         z = ceil(dim + log(log(n)))
 

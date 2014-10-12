@@ -93,10 +93,12 @@ class IteratedTverberg(CenterpointAlgo):
 
 # Let l be the max such that B_l−1 has at least d + 2 points
 def find_l(B, d):
-    l = 0
+    l = None
     for i, b in enumerate(B):
         if len(b) >= d + 2:
             l = i
+
+    assert (l != None), "No bucket with d+2 points found"
 
     return l + 1
 
@@ -106,7 +108,7 @@ def _prune_zipped(alphas, hull):
     _hull = np.asarray(hull)
     alphas, hull, non_hull = _prune_recursive(_alphas, _hull, [])
 
-    assert alphas.shape[0] == hull.shape[0]
+    assert (alphas.shape[0] == hull.shape[0]), "Broken hull"
 
     non_hull = [(p, [[(1, p)]]) for p in non_hull]
 

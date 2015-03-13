@@ -2,9 +2,7 @@ import math
 import unittest
 
 import numpy as np
-from PySide import QtGui
-
-from centerpoints.visualise.visualise \
+from centerpoints.visualise \
     import Visualisation, Polygons, Points, PointGroups, Gui
 
 

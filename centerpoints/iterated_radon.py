@@ -29,7 +29,7 @@ class IteratedRadon(CenterpointAlgo):
         return nodes[0]
 
     def visualisation(self, points, v):
-        import centerpoints.visualise.visualise as vis
+        import centerpoints.visualise as vis
         dim = len(points[0])
         # TODO: check L size and required number of points.
         L = (dim + 2) ** 4

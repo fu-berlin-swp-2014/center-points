@@ -1,7 +1,6 @@
 from math import log, ceil
 
 import numpy as np
-
 from .interfaces import CenterpointAlgo
 from .helpers import chunks
 from .lib import radon_point, sample_with_replacement, radon_partition
@@ -43,7 +42,6 @@ class IteratedRadon(CenterpointAlgo):
             new_nodes = []
             color = colorgroup.next_member()
             for chunk in chunks(nodes, dim + 2):
-                print(type(chunk))
                 radon_pt, _, (mask_I, mask_J) = radon_partition(chunk)
                 v.add(vis.RadonPartition(chunk[mask_I, :], chunk[mask_J, :],
                                          radon_pt, color))

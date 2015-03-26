@@ -346,7 +346,7 @@ def run_benchmarks(benchmarks, output_dir, seed):
             _timings = np.asarray(timings)
             timings_stats = {
                 "min": np.amin(_timings),
-                "max": np.max(_timings),
+                "max": np.amax(_timings),
                 "mean": np.mean(_timings),
                 "median": np.median(_timings),
                 "std": np.std(_timings),
@@ -355,7 +355,7 @@ def run_benchmarks(benchmarks, output_dir, seed):
 
             distances_stats = {
                 "min": np.amin(distances),
-                "max": np.max(distances),
+                "max": np.amax(distances),
                 "mean": np.mean(distances),
                 "median": np.median(distances),
                 "std": np.std(distances),

@@ -68,7 +68,6 @@ class Camera(object):
         """
         self.w, self.h = width, height
         glViewport(0, 0, width, height)
-        print(("Viewport " + str(width) + "x" + str(height)))
         self.update_projection()
 
     def update_projection(self):
@@ -229,7 +228,6 @@ class VisualisationController(QtGui.QMainWindow):
         self.update_visualisation()
 
     def set_data_func(self, name, data_func):
-        print(name)
         self._data_name = name
         self._data_func = data_func
         self.update_visualisation()
@@ -377,8 +375,6 @@ class GLWidget(QtOpenGL.QGLWidget):
     def keyPressEvent(self, event):
         # TODO: refactor
         key = event.key()
-        print(key)
-        print()
         delta = 10
         if key == QtCore.Qt.Key_P:
             self.cam.perspective()
@@ -651,3 +647,7 @@ class Gui:
         window = VisualisationController()
         window.show()
 
+
+def run_gui():
+    gui = Gui()
+    gui.app.exec_()

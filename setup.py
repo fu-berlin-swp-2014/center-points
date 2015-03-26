@@ -16,6 +16,9 @@ setup(
     entry_points={
         'console_scripts': [
             'centerpoints = centerpoints.cli:main',
+        ],
+        'gui_scripts': [
+            'centerpoints-gui = centerpoints.visualise:run_gui',
         ]
     },
 )

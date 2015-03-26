@@ -362,6 +362,12 @@ def run_benchmarks(benchmarks, output_dir, seed):
                 "sem": scipy.stats.sem(distances)
             }
 
+            if np.isnan(timings_stats["sem"]):
+                timings_stats["sem"] = 0
+
+            if np.isnan(distances_stats["sem"]):
+                distances_stats["sem"] = 0
+
 
             _config = config.copy()
             del _config['generator']
@@ -394,14 +400,15 @@ def run_benchmarks(benchmarks, output_dir, seed):
             # Write a short summary to the combined results.
             bench_short_result = [name, title, algorithm[1],
                                   repeat, size, radius, dim]
-            bench_short_result.extend(timings_stats.values())
-            bench_short_result.extend(distances_stats.values())
+            r = timings_stats
+            bench_short_result.extend([r["min"], r["max"], r["mean"], r["median"], r["std"], r["sem"]])
+            r = distances_stats
+            bench_short_result.extend([r["min"], r["max"], r["mean"], r["median"], r["std"], r["sem"]])
 
             csv_writer.writerow(bench_short_result)
             csv_file.flush()
 
     csv_file.close()
-
 
 def IntListType(argstr):
     if type(argstr) is None:

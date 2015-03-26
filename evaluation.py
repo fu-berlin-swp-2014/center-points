@@ -48,7 +48,7 @@ def dim_benchmarks(gens, repeat=None, size=None, radius=None, dim=None):
     benchmarks = {}
 
     for name, gen in gens.items():
-        benchmark_name = "{0}-{1}d".format(name, dim)
+        benchmark_name = "{}-{}n-{}d".format(name, size, dim)
         benchmark = {
             "title": benchmark_name,
             "generator": gen,
@@ -424,9 +424,9 @@ if __name__ == "__main__":
 
     parser.add_argument("--repeat", type=int, default=10, required=False,
                         help="Repeat each benchmark REPEAT times.")
-    parser.add_argument("--size", type=int, default=5000, required=False,
-                        help="Generate SIZE points for each benchmark without "
-                             "a fixed size.")
+    parser.add_argument("--sizes", type=IntListType, default=[5000],
+                        required=False, help="Generate SIZES points for each "
+                                             "benchmark without a fixed size.")
     parser.add_argument("--radius", type=int, default=50, required=False,
                         help="Set the radius if applicable (f.ex. spheres).")
     parser.add_argument("--dimensions", type=IntListType, default=None, required=False,
@@ -451,24 +451,27 @@ if __name__ == "__main__":
         args.output_dir = path.join(_dirname, "evaluation")
 
     # Only run the specified benchmarks
-    if args.dimensions:
-        _gens = {name: gen
-                 for (name, gen)
-                 in dim_benchmark_gens.items()
-                 if not args.benchmarks or name in args.benchmarks}
+    _benchmarks = {}
+    for size in args.sizes:
+        if args.dimensions:
+            _gens = {name: gen
+                     for (name, gen)
+                     in dim_benchmark_gens.items()
+                     if not args.benchmarks or name in args.benchmarks}
 
-        _benchmarks = {}
-        for dim in args.dimensions:
-            _dim_benchmarks = dim_benchmarks(_gens, args.repeat, args.size, args.radius, dim)
-            _benchmarks.update(_dim_benchmarks)
+            for dim in args.dimensions:
+                _dim_benchmarks = dim_benchmarks(_gens, args.repeat, size,
+                                                 args.radius, dim)
+                _benchmarks.update(_dim_benchmarks)
 
-    else:
-        _benchmarks = benchmarks(args.repeat, args.size, args.radius)
-        if args.benchmarks:
-            _benchmarks = {name: config
-                           for (name, config)
-                           in _benchmarks.items()
-                           if name in args.benchmarks}
+        else:
+            avialible_benchmarks = benchmarks(args.repeat, size, args.radius)
+            if args.benchmarks:
+                _benchmarks.update(
+                    {"{}-{}n".format(name, size): config
+                     for (name, config)
+                     in avialible_benchmarks.items()
+                     if name in args.benchmarks})
 
     # Run run run!
     run_benchmarks(_benchmarks, args.output_dir, args.seed)

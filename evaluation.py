@@ -414,7 +414,7 @@ def IntListType(argstr):
     if type(argstr) is None:
         return None
 
-    return map(int, argstr.split(","))
+    return list(map(int, argstr.split(",")))
 
 
 if __name__ == "__main__":
@@ -452,6 +452,7 @@ if __name__ == "__main__":
 
     # Only run the specified benchmarks
     _benchmarks = {}
+
     for size in args.sizes:
         if args.dimensions:
             _gens = {name: gen

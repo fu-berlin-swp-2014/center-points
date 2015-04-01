@@ -3,7 +3,7 @@
 from itertools import compress
 
 import numpy as np
-from numpy import log, ceil
+from numpy import log, log10, ceil
 
 from centerpoints.helpers import pop
 from centerpoints.lib import solve_homogeneous, radon_partition
@@ -17,7 +17,10 @@ class IteratedTverberg(CenterpointAlgo):
         n, d = points.shape
 
         # The loop terminates when a point is in the bucket B_z
-        z = int(log(ceil(n / (2 * ((d + 1) ** 2)))))
+        z = int(log10(ceil(n / (2 * ((d + 1) ** 2)))))
+        # or if the paper has a typo 
+        # z = int(ceil(log10(n / (2 * ((d + 1) ** 2)))))
+
 
         # Initialize empty stacks / buckets
         B = [[] for l in range(z+1)]
@@ -119,6 +122,10 @@ def _prune_recursive(alphas, hull, non_hull):
     # Remove all coefficients that are already (close to) zero.
     idx_nonzero = ~ np.isclose(alphas, np.zeros_like(alphas))  # alphas != 0
     alphas = alphas[idx_nonzero]
+
+    # Add pruned points to the non hull (and thus back to bucket B_0)
+    non_hull = non_hull + hull[~idx_nonzero].tolist()
+
     hull = hull[idx_nonzero]
 
     # @see http://www.math.cornell.edu/~eranevo/homepage/ConvNote.pdf
